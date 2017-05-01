@@ -198,6 +198,7 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
             }
 
             auto letterX = (nextLetterX + letterDef.offsetX * _bmfontScale) / contentScaleFactor;
+            // AWFramework wrap on space
             float trailingX = letterX;
             if (StringUtils::isUnicodeSpace(character)) {
                 trailingX += letterDef.xAdvance * _bmfontScale / contentScaleFactor;
@@ -206,6 +207,8 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
                 trailingX += letterDef.width * _bmfontScale;
             }
             if (_enableWrap && _maxLineWidth > 0.f && nextTokenX > 0.f && letterX + letterDef.width * _bmfontScale > _maxLineWidth && nextChangeSize)
+//            if (_enableWrap && _maxLineWidth > 0.f && nextTokenX > 0.f && letterX + letterDef.width * _bmfontScale > _maxLineWidth
+//                && !StringUtils::isUnicodeSpace(character) && nextChangeSize)
             {
                 _linesWidth.push_back(letterRight);
                 letterRight = 0.f;
