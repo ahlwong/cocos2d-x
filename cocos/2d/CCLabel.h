@@ -96,13 +96,14 @@ class EventListenerCustom;
 // AWFramework move LetterInfo and make public
 struct LetterInfo
 {
-    char16_t utf16Char;
+    char32_t utf32Char;
     bool valid;
     float positionX;
     float positionY;
     int atlasIndex;
     int lineIndex;
 };
+
 
 /**
  * @brief Label is a subclass of Node that knows how to render text labels.

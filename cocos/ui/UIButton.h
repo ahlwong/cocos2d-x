@@ -344,14 +344,16 @@ protected:
     virtual void normalTextureScaleChangedWithSize();
 
     // AWFramework added virtual keyword
-    void pressedTextureScaleChangedWithSize();
+    virtual void pressedTextureScaleChangedWithSize();
 
     // AWFramework added virtual keyword
-    void disabledTextureScaleChangedWithSize();
+    virtual void disabledTextureScaleChangedWithSize();
 
     virtual void adaptRenderers() override;
+
     // AWFramework added virtual keyword
     virtual void updateTitleLocation();
+    
     void updateContentSize();
     void createTitleRenderer();
 

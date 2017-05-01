@@ -636,6 +636,12 @@ void Node::setContentSize(const Size & size)
     }
 }
 
+// AWFramework addition
+void Node::setContentSize(float width, float height)
+{
+    setContentSize(Size(width, height));
+}
+
 // isRunning getter
 bool Node::isRunning() const
 {

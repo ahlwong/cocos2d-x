@@ -28,6 +28,9 @@ THE SOFTWARE.
 #ifndef __CCCONFIG_H__
 #define __CCCONFIG_H__
 
+// AWFramework
+#include "../../../Classes/Macros.h"
+
 #include "platform/CCPlatformConfig.h"
 
 /**
