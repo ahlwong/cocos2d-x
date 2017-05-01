@@ -698,6 +698,15 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 //    CCLOG("replaceRange");
 }
 
+// AWFramework addition
+- (BOOL)shouldChangeTextInRange:(UITextRange *)range replacementText:(NSString *)text
+{
+    IndexedRange* indexedRange = (IndexedRange *)range;
+    AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    std::string replacementString = std::string([text cStringUsingEncoding: NSUTF8StringEncoding]);
+    return cocos2d::IMEDispatcher::sharedDispatcher()->dispatchShouldChangeText(textRange, replacementString);
+}
+
 #pragma mark UITextInput - Working with Marked and Selected Text
 
 
@@ -710,10 +719,12 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
  * Setting marked text either replaces the existing marked text or, if none is present,
  * inserts it from the current selection. */ 
 
-- (void)setMarkedTextRange:(UITextRange *)markedTextRange
+// AWFramework rename text range parameter to prevent shadowing instance variable
+- (void)setMarkedTextRange:(UITextRange *)range
+//- (void)setMarkedTextRange:(UITextRange *)markedTextRange
 {
     // AWFramework addition
-    IndexedRange* indexedRange = (IndexedRange *)markedTextRange;
+    IndexedRange* indexedRange = (IndexedRange *)range;
     AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
     cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSetMarkedTextRange(textRange);
 
