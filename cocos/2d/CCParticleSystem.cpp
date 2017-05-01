@@ -56,6 +56,10 @@ THE SOFTWARE.
 #include "renderer/CCTextureCache.h"
 #include "platform/CCFileUtils.h"
 
+// AWFramework added includes
+#include "2d/CCParticleSystemQuad.h"
+#include "2d/CCSpriteFrameCache.h"
+
 using namespace std;
 
 NS_CC_BEGIN
@@ -471,52 +475,66 @@ bool ParticleSystem::initWithDictionary(ValueMap& dictionary, const std::string&
                 {
                 	textureName = dirname + textureName;
                 }
-                
-                Texture2D *tex = nullptr;
-                
-                if (!textureName.empty())
-                {
-                    // set not pop-up message box when load image failed
-                    bool notify = FileUtils::getInstance()->isPopupNotify();
-                    FileUtils::getInstance()->setPopupNotify(false);
-                    tex = Director::getInstance()->getTextureCache()->addImage(textureName);
-                    // reset the value of UIImage notify
-                    FileUtils::getInstance()->setPopupNotify(notify);
-                }
-                
-                if (tex)
-                {
-                    setTexture(tex);
-                }
-                else if( dictionary.find("textureImageData") != dictionary.end() )
-                {                        
-                    std::string textureData = dictionary.at("textureImageData").asString();
-                    CCASSERT(!textureData.empty(), "textureData can't be empty!");
-                    
-                    auto dataLen = textureData.size();
-                    if (dataLen != 0)
-                    {
-                        // if it fails, try to get it from the base64-gzipped data    
-                        int decodeLen = base64Decode((unsigned char*)textureData.c_str(), (unsigned int)dataLen, &buffer);
-                        CCASSERT( buffer != nullptr, "CCParticleSystem: error decoding textureImageData");
-                        CC_BREAK_IF(!buffer);
-                        
-                        ssize_t deflatedLen = ZipUtils::inflateMemory(buffer, decodeLen, &deflated);
-                        CCASSERT( deflated != nullptr, "CCParticleSystem: error ungzipping textureImageData");
-                        CC_BREAK_IF(!deflated);
-                        
-                        // For android, we should retain it in VolatileTexture::addImage which invoked in Director::getInstance()->getTextureCache()->addUIImage()
-                        image = new (std::nothrow) Image();
-                        bool isOK = image->initWithImageData(deflated, deflatedLen);
-                        CCASSERT(isOK, "CCParticleSystem: error init image with Data");
-                        CC_BREAK_IF(!isOK);
-                        
-                        setTexture(Director::getInstance()->getTextureCache()->addImage(image, _plistFile + textureName));
 
-                        image->release();
+                // AWFramework look for sprite frame
+                SpriteFrame* spriteFrame = SpriteFrameCache::getInstance()->getSpriteFrameByName(textureName);
+                if (spriteFrame) {
+
+                    ParticleSystemQuad* ps = dynamic_cast<ParticleSystemQuad*>(this);
+                    if (ps) {
+                        ps->setTextureWithRect(spriteFrame->getTexture(), spriteFrame->getRect());
                     }
                 }
-                
+                else {
+
+                    // AWFramework nest in else case
+                    Texture2D *tex = nullptr;
+                    
+                    if (!textureName.empty())
+                    {
+                        // set not pop-up message box when load image failed
+                        bool notify = FileUtils::getInstance()->isPopupNotify();
+                        FileUtils::getInstance()->setPopupNotify(false);
+                        tex = Director::getInstance()->getTextureCache()->addImage(textureName);
+                        // reset the value of UIImage notify
+                        FileUtils::getInstance()->setPopupNotify(notify);
+                    }
+                    
+                    if (tex)
+                    {
+                        setTexture(tex);
+                    }
+                    else if( dictionary.find("textureImageData") != dictionary.end() )
+                    {                        
+                        std::string textureData = dictionary.at("textureImageData").asString();
+                        CCASSERT(!textureData.empty(), "textureData can't be empty!");
+                        
+                        auto dataLen = textureData.size();
+                        if (dataLen != 0)
+                        {
+                            // if it fails, try to get it from the base64-gzipped data    
+                            int decodeLen = base64Decode((unsigned char*)textureData.c_str(), (unsigned int)dataLen, &buffer);
+                            CCASSERT( buffer != nullptr, "CCParticleSystem: error decoding textureImageData");
+                            CC_BREAK_IF(!buffer);
+                            
+                            ssize_t deflatedLen = ZipUtils::inflateMemory(buffer, decodeLen, &deflated);
+                            CCASSERT( deflated != nullptr, "CCParticleSystem: error ungzipping textureImageData");
+                            CC_BREAK_IF(!deflated);
+                            
+                            // For android, we should retain it in VolatileTexture::addImage which invoked in Director::getInstance()->getTextureCache()->addUIImage()
+                            image = new (std::nothrow) Image();
+                            bool isOK = image->initWithImageData(deflated, deflatedLen);
+                            CCASSERT(isOK, "CCParticleSystem: error init image with Data");
+                            CC_BREAK_IF(!isOK);
+                            
+                            setTexture(Director::getInstance()->getTextureCache()->addImage(image, _plistFile + textureName));
+
+                            image->release();
+                        }
+                    }
+                // AWFramework close else case
+                }
+
                 _yCoordFlipped = dictionary.find("yCoordFlipped") == dictionary.end() ? 1 : dictionary.at("yCoordFlipped").asInt();
 
                 if( !this->_texture)

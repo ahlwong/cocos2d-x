@@ -200,18 +200,30 @@ void NinePatchImageParser::setSpriteFrameInfo(Image* image, const cocos2d::Rect&
 bool NinePatchImageParser::isNinePatchImage(const std::string& filepath)
 {
     size_t length = filepath.length();
-    if(length <7 )
-    {
+
+    // AWFramework change .9.png to .9p.png to denote nine patch files and avoid conflict
+    if (length < 8) {
         return false;
     }
-    if(filepath.compare(length-6, 6, ".9.png") == 0)
-    {
+    if (filepath.compare(length - 7, 7, ".9p.png") == 0) {
         return true;
     }
-    else
-    {
+    else {
         return false;
     }
+
+//    if(length <7 )
+//    {
+//        return false;
+//    }
+//    if(filepath.compare(length-6, 6, ".9.png") == 0)
+//    {
+//        return true;
+//    }
+//    else
+//    {
+//        return false;
+//    }
 }
 
 NS_CC_END

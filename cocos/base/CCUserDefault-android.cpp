@@ -231,6 +231,82 @@ int UserDefault::getIntegerForKey(const char* pKey, int defaultValue)
 	return JniHelper::callStaticIntMethod(helperClassName, "getIntegerForKey", pKey, defaultValue);
 }
 
+// AWFramework addition
+long UserDefault::getLongForKey(const char* pKey)
+{
+    return getLongForKey(pKey, 0);
+}
+
+// AWFramework addition
+long UserDefault::getLongForKey(const char* pKey, long defaultValue)
+{
+#ifdef KEEP_COMPATABILITY
+    tinyxml2::XMLDocument* doc = nullptr;
+    tinyxml2::XMLElement* node = getXMLNodeForKey(pKey, &doc);
+    if (node)
+    {
+        if (node->FirstChild())
+        {
+            long ret = atol((const char*)node->FirstChild()->Value());
+
+            // set value in NSUserDefaults
+            setLongForKey(pKey, ret);
+            flush();
+
+            // delete xmle node
+            deleteNode(doc, node);
+
+            return ret;
+        }
+        else
+        {
+            // delete xmle node
+            deleteNode(doc, node);
+        }
+    }
+#endif
+
+    return getLongForKeyJNI(pKey, defaultValue);
+}
+
+// AWFramework addition
+long long UserDefault::getLongLongForKey(const char* pKey)
+{
+    return getLongLongForKey(pKey, 0);
+}
+
+// AWFramework addition
+long long UserDefault::getLongLongForKey(const char* pKey, long long defaultValue)
+{
+#ifdef KEEP_COMPATABILITY
+    tinyxml2::XMLDocument* doc = nullptr;
+    tinyxml2::XMLElement* node = getXMLNodeForKey(pKey, &doc);
+    if (node)
+    {
+        if (node->FirstChild())
+        {
+            long long ret = atoll((const char*)node->FirstChild()->Value());
+
+            // set value in NSUserDefaults
+            setLongLongForKey(pKey, ret);
+            flush();
+
+            // delete xmle node
+            deleteNode(doc, node);
+
+            return ret;
+        }
+        else
+        {
+            // delete xmle node
+            deleteNode(doc, node);
+        }
+    }
+#endif
+    
+    return getLongLongForKeyJNI(pKey, defaultValue);
+}
+
 float UserDefault::getFloatForKey(const char* pKey)
 {
     return getFloatForKey(pKey, 0.0f);
@@ -422,6 +498,26 @@ void UserDefault::setIntegerForKey(const char* pKey, int value)
 #endif
 
     JniHelper::callStaticVoidMethod(helperClassName, "setIntegerForKey", pKey, value);
+}
+
+// AWFramework addition
+void UserDefault::setLongForKey(const char* pKey, long value)
+{
+#ifdef KEEP_COMPATABILITY
+    deleteNodeByKey(pKey);
+#endif
+
+    return setLongForKeyJNI(pKey, value);
+}
+
+// AWFramework addition
+void UserDefault::setLongLongForKey(const char* pKey, long long value)
+{
+#ifdef KEEP_COMPATABILITY
+    deleteNodeByKey(pKey);
+#endif
+
+    return setLongLongForKeyJNI(pKey, value);
 }
 
 void UserDefault::setFloatForKey(const char* pKey, float value)

@@ -333,7 +333,11 @@ public:
      *
      * @param pos  The position (x,y) of the widget in OpenGL coordinates
      */
-    virtual void setPosition(const Vec2 &pos) override;
+
+    // AWFramework change: setPosition(float x, float y) is designated setter
+    using ProtectedNode::setPosition;
+    virtual void setPosition(float x, float y) override;
+//    virtual void setPosition(const Vec2 &pos) override;
 
     /**
      * Set the percent(x,y) of the widget in OpenGL coordinates

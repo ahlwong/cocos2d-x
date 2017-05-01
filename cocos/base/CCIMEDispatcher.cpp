@@ -337,6 +337,261 @@ void IMEDispatcher::dispatchKeyboardDidHide(IMEKeyboardNotificationInfo& info)
     }
 }
 
+// AWFramework addition
+bool IMEDispatcher::dispatchHasText()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->hasText();
+    }
+
+    return false;
+}
+
+// AWFramework addition
+std::string IMEDispatcher::dispatchTextInRange(const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->textInRange(range);
+    }
+    return STD_STRING_EMPTY;
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchReplaceText(const AWTextRange& range, const std::string& replacementText)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->replaceText(range, replacementText);
+    }
+}
+
+// AWFramework addition
+bool IMEDispatcher::dispatchShouldChangeText(const AWTextRange& range, const std::string& replacementText)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->shouldChangeText(range, replacementText);
+    }
+    return true;
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchSetSelectedTextRange(const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        _impl->_delegateWithIme->setSelectedTextRange(range);
+    }
+}
+
+// AWFramework addition
+AWTextRange IMEDispatcher::dispatchSelectedTextRange()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->selectedTextRange();
+    }
+    return AWTextRange();
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchSetMarkedTextRange(const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        _impl->_delegateWithIme->setMarkedTextRange(range);
+    }
+}
+
+// AWFramework addition
+AWTextRange IMEDispatcher::dispatchMarkedTextRange()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->markedTextRange();
+    }
+    return AWTextRange();
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchSetMarkedText(const std::string& text, const AWTextRange& selectedRange)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        _impl->_delegateWithIme->setMarkedText(text, selectedRange);
+    }
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchUnmarkText()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        _impl->_delegateWithIme->unmarkText();
+    }
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchSetSelectionAffinity(AWTextStorageDirection direction)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        _impl->_delegateWithIme->setSelectionAffinity(direction);
+    }
+}
+
+// AWFramework addition
+AWTextStorageDirection IMEDispatcher::dispatchSelectionAffinity()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->selectionAffinity();
+    }
+    return AWTextStorageDirection::AWTextStorageDirection_BACKWARD;
+}
+
+// AWFramework addition
+AWTextRange IMEDispatcher::dispatchTextRangeBetweenPositions(const AWTextPosition& startPosition, const AWTextPosition& endPosition)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->textRangeBetweenPositions(startPosition, endPosition);
+    }
+    return AWTextRange();
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchOffsetTextPosition(const AWTextPosition& startPosition, const AWTextPosition& offset)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->offsetTextPosition(startPosition, offset);
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchOffsetTextPosition(const AWTextPosition& startPosition, const AWTextLayoutDirection& direction, const AWTextPosition& offset)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->offsetTextPosition(startPosition, direction, offset);
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchBeginningOfDocument()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->beginningOfDocument();
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchEndOfDocument()
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->endOfDocument();
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+AWTextPositionComparison IMEDispatcher::dispatchComparePositions(const AWTextPosition& firstPosition, const AWTextPosition& secondPosition)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->comparePositions(firstPosition, secondPosition);
+    }
+    return AWTextPositionComparison::AWTextPositionComparison_EQUAL;
+}
+
+// AWFramework addition
+size_t IMEDispatcher::dispatchOffsetBetweenTextPositions(const AWTextPosition& startPosition, const AWTextPosition& endPosition)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->offsetBetweenTextPositions(startPosition, endPosition);
+    }
+    return 0;
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchFarthestPosition(const AWTextRange& range, const AWTextLayoutDirection& direction)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->farthestPosition(range, direction);
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+AWTextRange IMEDispatcher::dispatchFarthestRange(const AWTextPosition& startPosition, const AWTextLayoutDirection& direction)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->farthestRange(startPosition, direction);
+    }
+    return AWTextRange();
+}
+
+// AWFramework addition
+AWTextWritingDirection IMEDispatcher::dispatchBaseWritingDirection(const AWTextPosition& position, const AWTextStorageDirection& direction)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->baseWritingDirection(position, direction);
+    }
+    return AWTextWritingDirection::AWTextWritingDirection_NATURAL;
+}
+
+// AWFramework addition
+void IMEDispatcher::dispatchSetBaseWritingDirection(const AWTextWritingDirection& direction, const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        _impl->_delegateWithIme->setBaseWritingDirection(direction, range);
+    }
+}
+
+// AWFramework addition
+Rect IMEDispatcher::dispatchFirstRect(const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->firstRect(range);
+    }
+    return Rect::ZERO;
+}
+
+// AWFramework addition
+Rect IMEDispatcher::dispatchCaretRect(const AWTextPosition& position)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->caretRect(position);
+    }
+    return Rect::ZERO;
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchClosestPosition(const Point& point)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->closestPosition(point);
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+std::vector<Rect> IMEDispatcher::dispatchSelectionRects(const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->selectionRects(range);
+    }
+    return {};
+}
+
+// AWFramework addition
+AWTextPosition IMEDispatcher::dispatchClosestPosition(const Point& point, const AWTextRange& range)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->closestPosition(point, range);
+    }
+    return AWTextPosition_INVALID;
+}
+
+// AWFramework addition
+AWTextRange IMEDispatcher::dispatchCharacterRange(const Point& point)
+{
+    if (_impl && _impl->_delegateWithIme) {
+        return _impl->_delegateWithIme->characterRange(point);
+    }
+    return AWTextRange();
+}
+
 //////////////////////////////////////////////////////////////////////////
 // protected member function
 //////////////////////////////////////////////////////////////////////////

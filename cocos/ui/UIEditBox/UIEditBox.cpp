@@ -435,14 +435,27 @@ TextHAlignment EditBox::getTextHorizontalAlignment() const
 }
 
 /* override function */
-void EditBox::setPosition(const Vec2& pos)
+
+// AWFramework change to setPosition(float x, float y) from setPosition(const Vec2 &pos)
+void EditBox::setPosition(float x, float y)
 {
-    Widget::setPosition(pos);
+    // AWFramework change to x, y
+    Widget::setPosition(x, y);
     if (_editBoxImpl != nullptr)
     {
-        _editBoxImpl->setPosition(pos);
+        // AWFramework change to x, y
+        _editBoxImpl->setPosition(Vec2(x, y));
     }
 }
+
+//void EditBox::setPosition(const Vec2& pos)
+//{
+//    Widget::setPosition(pos);
+//    if (_editBoxImpl != nullptr)
+//    {
+//        _editBoxImpl->setPosition(pos);
+//    }
+//}
 
 void EditBox::setVisible(bool visible)
 {

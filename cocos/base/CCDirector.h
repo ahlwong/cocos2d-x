@@ -293,21 +293,27 @@ public:
      * The running scene will be deleted. If there are no more scenes in the stack the execution is terminated.
      * ONLY call it if there is a running scene.
      */
-    void popScene();
+
+    // AWFramework add transition argument
+    void popScene(std::function<Scene*(Scene* scene)> transition = [](Scene* scene){ return scene; });
 
     /** 
      * Pops out all scenes from the stack until the root scene in the queue.
      * This scene will replace the running one.
      * Internally it will call `popToSceneStackLevel(1)`.
      */
-    void popToRootScene();
+
+    // AWFramework add transition argument
+    void popToRootScene(std::function<Scene*(Scene* scene)> transition = [](Scene* scene){ return scene; });
 
     /** Pops out all scenes from the stack until it reaches `level`.
      If level is 0, it will end the director.
      If level is 1, it will pop all scenes until it reaches to root scene.
      If level is <= than the current stack level, it won't do anything.
      */
- 	void popToSceneStackLevel(int level);
+
+    // AWFramework add transition argument
+    void popToSceneStackLevel(int level, std::function<Scene*(Scene* scene)> transition = [](Scene* scene){ return scene; });
 
     /** Replaces the running scene with a new one. The running scene is terminated.
      * ONLY call it if there is a running scene.
@@ -694,6 +700,19 @@ protected:
 
     // GLView will recreate stats labels to fit visible rect
     friend class GLView;
+
+// AWFramework additions for accessing and modifying scene stack
+public:
+
+    const Vector<Scene*>& getSceneStack() const {
+        return _scenesStack;
+    }
+    void setSceneStack(const Vector<Scene*>& sceneStack) {
+        _sendCleanupToScene = false;
+        _nextScene = sceneStack.back();
+        _scenesStack = sceneStack;
+    }
+
 };
 
 // FIXME: Added for backward compatibility in case

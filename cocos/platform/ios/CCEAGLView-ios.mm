@@ -75,6 +75,61 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 #import "platform/ios/CCES2Renderer-ios.h"
 #import "platform/ios/OpenGL_Internal-ios.h"
 
+// AWFramework added IndexedPosition interface
+@interface IndexedPosition : UITextPosition {
+    NSUInteger _index;
+    id <UITextInputDelegate> _inputDelegate;
+}
+@property (nonatomic) NSUInteger index;
++ (IndexedPosition *)positionWithIndex:(NSUInteger)index;
+@end
+
+// AWFramework added IndexedPosition implementation
+@implementation IndexedPosition
+@synthesize index = _index;
+
++ (IndexedPosition *)positionWithIndex:(NSUInteger)index {
+    IndexedPosition *pos = [[IndexedPosition alloc] init];
+    pos.index = index;
+    return [pos autorelease];
+}
+
+@end
+
+// AWFramework added IndexedRange interface
+@interface IndexedRange : UITextRange {
+    NSRange _range;
+}
+@property (nonatomic) NSRange range;
++ (IndexedRange *)rangeWithNSRange:(NSRange)range;
+
+@end
+
+// AWFramework added IndexedRange implementation
+@implementation IndexedRange
+@synthesize range = _range;
+
++ (IndexedRange *)rangeWithNSRange:(NSRange)nsrange {
+    if (nsrange.location == NSNotFound)
+        return nil;
+    IndexedRange *range = [[IndexedRange alloc] init];
+    range.range = nsrange;
+    return [range autorelease];
+}
+
+- (UITextPosition *)start {
+    return [IndexedPosition positionWithIndex:self.range.location];
+}
+
+- (UITextPosition *)end {
+    return [IndexedPosition positionWithIndex:(self.range.location + self.range.length)];
+}
+
+-(BOOL)isEmpty {
+    return (self.range.length == 0);
+}
+@end
+
 //CLASS IMPLEMENTATIONS:
 
 #define IOS_MAX_TOUCHES_COUNT     10
@@ -137,7 +192,8 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         multiSampling_ = sampling;
         requestedSamples_ = nSamples;
         preserveBackbuffer_ = retained;
-        markedText_ = nil;
+// AWFramework remove marked text since implemented manually
+//        markedText_ = nil;
         if( ! [self setupSurfaceWithSharegroup:sharegroup] ) {
             [self release];
             return nil;
@@ -146,14 +202,26 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
         originalRect_ = self.frame;
         self.keyboardShowNotification = nil;
-        self.autocorrectionType = UITextAutocorrectionTypeNo;
-        
+        // AWFramework different default value set below
+//        self.autocorrectionType = UITextAutocorrectionTypeNo;
+
         if ([self respondsToSelector:@selector(setContentScaleFactor:)])
         {
             self.contentScaleFactor = [[UIScreen mainScreen] scale];
         }
+
+        // AWFramework added UITextInputTraits protocol
+        autocapitalizationType = UITextAutocapitalizationTypeSentences;
+        autocorrectionType = UITextAutocorrectionTypeDefault;
+        spellCheckingType = UITextSpellCheckingTypeDefault;
+        enablesReturnKeyAutomatically = NO;
+        keyboardAppearance = UIKeyboardAppearanceDefault;
+        keyboardType = UIKeyboardTypeDefault;
+        returnKeyType = UIReturnKeyDefault;
+        textContentType = nil;
+        tokenizer = [[UITextInputStringTokenizer alloc] initWithTextInput: self];
     }
-    
+
     return self;
 }
 
@@ -168,8 +236,9 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
         multiSampling_= NO;
         requestedSamples_ = 0;
         size_ = [eaglLayer bounds].size;
-        markedText_ = nil;
-        
+// AWFramework remove marked text since implemented manually
+//        markedText_ = nil;
+
         if( ! [self setupSurfaceWithSharegroup:nil] ) {
             [self release];
             return nil;
@@ -491,10 +560,11 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (BOOL)canBecomeFirstResponder
 {
-    if (nil != markedText_) {
-        [markedText_ release];
-    }
-    markedText_ = nil;
+// AWFramework remove marked text since implemented manually
+//    if (nil != markedText_) {
+//        [markedText_ release];
+//    }
+//    markedText_ = nil;
     if (isUseUITextField)
     {
         return NO;
@@ -514,46 +584,64 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     return [super resignFirstResponder];
 }
 
+// AWFramework added UITextInputTraits protocol
+#pragma mark - UITextInputTraits protocol
+
+@synthesize autocapitalizationType;
+@synthesize spellCheckingType;
+@synthesize enablesReturnKeyAutomatically;
+@synthesize keyboardAppearance;
+@synthesize keyboardType;
+@synthesize returnKeyType;
+@synthesize textContentType;
+
 #pragma mark - UIKeyInput protocol
 
 
 - (BOOL)hasText
 {
-    return NO;
+    // AWFramework addition
+    return cocos2d::IMEDispatcher::sharedDispatcher()->dispatchHasText();
+
+//    return NO;
 }
 
 - (void)insertText:(NSString *)text
 {
-    if (nil != markedText_) {
-        [markedText_ release];
-        markedText_ = nil;
-    }
+// AWFramework remove marked text since implemented manually
+//    if (nil != markedText_) {
+//        [markedText_ release];
+//        markedText_ = nil;
+//    }
     const char * pszText = [text cStringUsingEncoding:NSUTF8StringEncoding];
     cocos2d::IMEDispatcher::sharedDispatcher()->dispatchInsertText(pszText, strlen(pszText));
 }
 
 - (void)deleteBackward
 {
-    if (nil != markedText_) {
-        [markedText_ release];
-        markedText_ = nil;
-    }
+// AWFramework remove marked text since implemented manually
+//    if (nil != markedText_) {
+//        [markedText_ release];
+//        markedText_ = nil;
+//    }
     cocos2d::IMEDispatcher::sharedDispatcher()->dispatchDeleteBackward();
 }
 
 #pragma mark - UITextInputTrait protocol
 
--(UITextAutocapitalizationType) autocapitalizationType
-{
-    return UITextAutocapitalizationTypeNone;
-}
+// AWFramework remove autocapitalization type since implemented manually
+//-(UITextAutocapitalizationType) autocapitalizationType
+//{
+//    return UITextAutocapitalizationTypeNone;
+//}
 
 #pragma mark - UITextInput protocol
 
 #pragma mark UITextInput - properties
 
-@synthesize beginningOfDocument;
-@synthesize endOfDocument;
+// AWFramework remove beginningOfDocument and endOfDocument since implemented manually
+//@synthesize beginningOfDocument;
+//@synthesize endOfDocument;
 @synthesize inputDelegate;
 @synthesize markedTextRange;
 @synthesize markedTextStyle;
@@ -565,23 +653,49 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
  * always performed on the text from this selection.  nil corresponds to no selection. */
 - (void)setSelectedTextRange:(UITextRange *)aSelectedTextRange
 {
-    CCLOG("UITextRange:setSelectedTextRange");
+    // AWFramework addition
+    IndexedRange* indexedRange = (IndexedRange *)aSelectedTextRange;
+    AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSetSelectedTextRange(textRange);
+
+//    CCLOG("UITextRange:setSelectedTextRange");
 }
 - (UITextRange *)selectedTextRange
 {
-    return [[[UITextRange alloc] init] autorelease];
+    // AWFramework addition
+    AWTextRange textRange = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSelectedTextRange();
+    if (textRange.isInvalid) {
+        return nil;
+    }
+    else {
+        return [IndexedRange rangeWithNSRange: NSMakeRange(textRange.startPosition, textRange.getLength())];
+    }
+
+//    return [[[UITextRange alloc] init] autorelease];
 }
 
 #pragma mark UITextInput - Replacing and Returning Text
 
 - (NSString *)textInRange:(UITextRange *)range
 {
-    CCLOG("textInRange");
-    return @"";
+    // AWFramework addition
+    IndexedRange* indexedRange = (IndexedRange *)range;
+    AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    std::string string = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchTextInRange(textRange);
+    return [NSString stringWithCString: string.c_str() encoding: NSUTF8StringEncoding];
+
+//    CCLOG("textInRange");
+//    return @"";
 }
 - (void)replaceRange:(UITextRange *)range withText:(NSString *)theText
 {
-    CCLOG("replaceRange");
+    // AWFramework addition
+    IndexedRange* indexedRange = (IndexedRange *)range;
+    AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    std::string replacementString = std::string([theText cStringUsingEncoding: NSUTF8StringEncoding]);
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchReplaceText(textRange, replacementString);
+
+//    CCLOG("replaceRange");
 }
 
 #pragma mark UITextInput - Working with Marked and Selected Text
@@ -598,100 +712,294 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 
 - (void)setMarkedTextRange:(UITextRange *)markedTextRange
 {
-    CCLOG("setMarkedTextRange");
+    // AWFramework addition
+    IndexedRange* indexedRange = (IndexedRange *)markedTextRange;
+    AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSetMarkedTextRange(textRange);
+
+//    CCLOG("setMarkedTextRange");
 }
 
 - (UITextRange *)markedTextRange
 {
-    CCLOG("markedTextRange");
-    return nil; // Nil if no marked text.
+    // AWFramework addition
+    AWTextRange textRange = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchMarkedTextRange();
+    if (textRange.isInvalid) {
+        return nil;
+    }
+    else {
+        return [IndexedRange rangeWithNSRange: NSMakeRange(textRange.startPosition, textRange.getLength())];
+    }
+
+//    CCLOG("markedTextRange");
+//    return nil; // Nil if no marked text.
 }
 - (void)setMarkedTextStyle:(NSDictionary *)markedTextStyle
 {
-    CCLOG("setMarkedTextStyle");
-    
+// AWFramework silence log statement
+//    CCLOG("setMarkedTextStyle");
+
 }
 - (NSDictionary *)markedTextStyle
 {
-    CCLOG("markedTextStyle");
+// AWFramework silence log statement
+//    CCLOG("markedTextStyle");
     return nil;
 }
 - (void)setMarkedText:(NSString *)markedText selectedRange:(NSRange)selectedRange
 {
-    CCLOG("setMarkedText");
-    if (markedText == markedText_) {
-        return;
-    }
-    if (nil != markedText_) {
-        [markedText_ release];
-    }
-    markedText_ = markedText;
-    [markedText_ retain];
+    // AWFramework addition
+    std::string text = std::string([markedText cStringUsingEncoding: NSUTF8StringEncoding]);
+    AWTextRange textRange = AWTextRange(selectedRange.location, selectedRange.location + selectedRange.length);
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSetMarkedText(text, textRange);
+
+//    CCLOG("setMarkedText");
+//    if (markedText == markedText_) {
+//        return;
+//    }
+//    if (nil != markedText_) {
+//        [markedText_ release];
+//    }
+//    markedText_ = markedText;
+//    [markedText_ retain];
 }
 - (void)unmarkText
 {
-    CCLOG("unmarkText");
-    if (nil == markedText_)
-    {
-        return;
+    // AWFramework addition
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchUnmarkText();
+
+//    CCLOG("unmarkText");
+//    if (nil == markedText_)
+//    {
+//        return;
+//    }
+//    const char * pszText = [markedText_ cStringUsingEncoding:NSUTF8StringEncoding];
+//    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchInsertText(pszText, strlen(pszText));
+//    [markedText_ release];
+//    markedText_ = nil;
+}
+
+// AWFramework added selection affinity setter
+- (void)setSelectionAffinity:(UITextStorageDirection)selectionAffinity
+{
+    AWTextStorageDirection direction = AWTextStorageDirection::AWTextStorageDirection_FORWARD;
+    if (selectionAffinity == UITextStorageDirectionBackward) {
+        direction = AWTextStorageDirection::AWTextStorageDirection_BACKWARD;
     }
-    const char * pszText = [markedText_ cStringUsingEncoding:NSUTF8StringEncoding];
-    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchInsertText(pszText, strlen(pszText));
-    [markedText_ release];
-    markedText_ = nil;
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSetSelectionAffinity(direction);
+}
+
+// AWFramework added selection affinity getter
+- (UITextStorageDirection)selectionAffinity
+{
+    AWTextStorageDirection direction = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSelectionAffinity();
+    if (direction == AWTextStorageDirection::AWTextStorageDirection_FORWARD) {
+        return UITextStorageDirectionForward;
+    }
+    else {
+        return UITextStorageDirectionBackward;
+    }
 }
 
 #pragma mark Methods for creating ranges and positions.
 
 - (UITextRange *)textRangeFromPosition:(UITextPosition *)fromPosition toPosition:(UITextPosition *)toPosition
 {
-    CCLOG("textRangeFromPosition");
-    return nil;
+    // AWFramework addition
+    AWTextPosition startPosition = ((IndexedPosition *) fromPosition).index;
+    AWTextPosition endPosition = ((IndexedPosition *) toPosition).index;
+    AWTextRange textRange = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchTextRangeBetweenPositions(startPosition, endPosition);
+    return [IndexedRange rangeWithNSRange: NSMakeRange(textRange.startPosition, textRange.getLength())];
+
+//    CCLOG("textRangeFromPosition");
+//    return nil;
 }
 - (UITextPosition *)positionFromPosition:(UITextPosition *)position offset:(NSInteger)offset
 {
-    CCLOG("positionFromPosition");
-    return nil;
+    // AWFramework addition
+    AWTextPosition textPosition = ((IndexedPosition *) position).index;
+    AWTextPosition resultPosition = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchOffsetTextPosition(textPosition, offset);
+    if (resultPosition != AWTextPosition_INVALID) {
+        return [IndexedPosition positionWithIndex: resultPosition];
+    }
+    else {
+        return nil;
+    }
+
+//    CCLOG("positionFromPosition");
+//    return nil;
 }
 - (UITextPosition *)positionFromPosition:(UITextPosition *)position inDirection:(UITextLayoutDirection)direction offset:(NSInteger)offset
 {
-    CCLOG("positionFromPosition");
-    return nil;
+    // AWFramework addition
+    AWTextPosition textPosition = ((IndexedPosition *) position).index;
+    AWTextLayoutDirection layoutDirection;
+    if (direction == UITextLayoutDirectionUp) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_UP;
+    }
+    else if (direction == UITextLayoutDirectionRight) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_RIGHT;
+    }
+    else if (direction == UITextLayoutDirectionDown) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_DOWN;
+    }
+    else {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_LEFT;
+    }
+
+    AWTextPosition resultPosition = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchOffsetTextPosition(textPosition, layoutDirection, offset);
+    if (resultPosition != AWTextPosition_INVALID) {
+        return [IndexedPosition positionWithIndex: resultPosition];
+    }
+    else {
+        return nil;
+    }
+
+//    CCLOG("positionFromPosition");
+//    return nil;
+}
+
+// AWFramework addition
+- (UITextPosition *)beginningOfDocument
+{
+    return [IndexedPosition positionWithIndex: cocos2d::IMEDispatcher::sharedDispatcher()->dispatchBeginningOfDocument()];
+}
+
+// AWFramework addition
+- (UITextPosition *)endOfDocument
+{
+    return [IndexedPosition positionWithIndex: cocos2d::IMEDispatcher::sharedDispatcher()->dispatchEndOfDocument()];
 }
 
 /* Simple evaluation of positions */
 - (NSComparisonResult)comparePosition:(UITextPosition *)position toPosition:(UITextPosition *)other
 {
-    CCLOG("comparePosition");
-    return (NSComparisonResult)0;
+    // AWFramework addition
+    AWTextPosition startPosition = ((IndexedPosition *) position).index;
+    AWTextPosition endPosition = ((IndexedPosition *) other).index;
+    AWTextPositionComparison comparison = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchComparePositions(startPosition, endPosition);
+    if (comparison == AWTextPositionComparison::AWTextPositionComparison_ASCENDING) {
+        return NSOrderedAscending;
+    }
+    else if (comparison == AWTextPositionComparison::AWTextPositionComparison_DESCENDING) {
+        return NSOrderedDescending;
+    }
+    else {
+        return NSOrderedSame;
+    }
+
+//    CCLOG("comparePosition");
+//    return (NSComparisonResult)0;
 }
 - (NSInteger)offsetFromPosition:(UITextPosition *)from toPosition:(UITextPosition *)toPosition
 {
-    CCLOG("offsetFromPosition");
-    return 0;
+    // AWFramework addition
+    AWTextPosition startPosition = ((IndexedPosition *) from).index;
+    AWTextPosition endPosition = ((IndexedPosition *) toPosition).index;
+    return cocos2d::IMEDispatcher::sharedDispatcher()->dispatchOffsetBetweenTextPositions(startPosition, endPosition);
+
+//    CCLOG("offsetFromPosition");
+//    return 0;
 }
 
 - (UITextPosition *)positionWithinRange:(UITextRange *)range farthestInDirection:(UITextLayoutDirection)direction
 {
-    CCLOG("positionWithinRange");
-    return nil;
+    // AWFramework addition
+    IndexedRange* indexedRange = (IndexedRange *)range;
+    AWTextRange textRange = AWTextRange(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    AWTextLayoutDirection layoutDirection;
+    if (direction == UITextLayoutDirectionUp) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_UP;
+    }
+    else if (direction == UITextLayoutDirectionRight) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_RIGHT;
+    }
+    else if (direction == UITextLayoutDirectionDown) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_DOWN;
+    }
+    else {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_LEFT;
+    }
+    AWTextPosition resultPosition = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchFarthestPosition(textRange, layoutDirection);
+    if (resultPosition != AWTextPosition_INVALID) {
+        return [IndexedPosition positionWithIndex: resultPosition];
+    }
+    else {
+        return nil;
+    }
+
+//    CCLOG("positionWithinRange");
+//    return nil;
 }
 - (UITextRange *)characterRangeByExtendingPosition:(UITextPosition *)position inDirection:(UITextLayoutDirection)direction
 {
-    CCLOG("characterRangeByExtendingPosition");
-    return nil;
+    // AWFramework addition
+    AWTextPosition textPosition = ((IndexedPosition *) position).index;
+    AWTextLayoutDirection layoutDirection;
+    if (direction == UITextLayoutDirectionUp) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_UP;
+    }
+    else if (direction == UITextLayoutDirectionRight) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_RIGHT;
+    }
+    else if (direction == UITextLayoutDirectionDown) {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_DOWN;
+    }
+    else {
+        layoutDirection = AWTextLayoutDirection::AWTextLayoutDirection_LEFT;
+    }
+    AWTextRange resultRange = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchFarthestRange(textPosition, layoutDirection);
+    return [IndexedRange rangeWithNSRange:NSMakeRange(resultRange.startPosition, resultRange.getLength())];
+
+//    CCLOG("characterRangeByExtendingPosition");
+//    return nil;
 }
 
 #pragma mark Writing direction
 
 - (UITextWritingDirection)baseWritingDirectionForPosition:(UITextPosition *)position inDirection:(UITextStorageDirection)direction
 {
-    CCLOG("baseWritingDirectionForPosition");
-    return UITextWritingDirectionNatural;
+    // AWFramework addition
+    AWTextPosition textPosition = ((IndexedPosition *) position).index;
+    AWTextStorageDirection storageDirection;
+    if (direction == UITextStorageDirectionForward) {
+        storageDirection = AWTextStorageDirection::AWTextStorageDirection_FORWARD;
+    }
+    else {
+        storageDirection = AWTextStorageDirection::AWTextStorageDirection_BACKWARD;
+    }
+    AWTextWritingDirection writingDirection = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchBaseWritingDirection(textPosition, storageDirection);
+    if (writingDirection == AWTextWritingDirection::AWTextWritingDirection_RIGHT_TO_LEFT) {
+        return UITextWritingDirectionRightToLeft;
+    }
+    else if (writingDirection == AWTextWritingDirection::AWTextWritingDirection_LEFT_TO_RIGHT) {
+        return UITextWritingDirectionLeftToRight;
+    }
+    else {
+        return UITextWritingDirectionNatural;
+    }
+
+//    CCLOG("baseWritingDirectionForPosition");
+//    return UITextWritingDirectionNatural;
 }
 - (void)setBaseWritingDirection:(UITextWritingDirection)writingDirection forRange:(UITextRange *)range
 {
-    CCLOG("setBaseWritingDirection");
+    // AWFramework addition
+    AWTextWritingDirection direction;
+    if (writingDirection == UITextWritingDirectionRightToLeft) {
+        direction = AWTextWritingDirection::AWTextWritingDirection_RIGHT_TO_LEFT;
+    }
+    else if (writingDirection == UITextWritingDirectionLeftToRight) {
+        direction = AWTextWritingDirection::AWTextWritingDirection_LEFT_TO_RIGHT;
+    }
+    else {
+        direction = AWTextWritingDirection::AWTextWritingDirection_NATURAL;
+    }
+    IndexedRange* indexedRange = (IndexedRange *)range;
+    AWTextRange textRange = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchTextRangeBetweenPositions(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    cocos2d::IMEDispatcher::sharedDispatcher()->dispatchSetBaseWritingDirection(direction, textRange);
+
+//    CCLOG("setBaseWritingDirection");
 }
 
 #pragma mark Geometry
@@ -699,12 +1007,24 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 /* Geometry used to provide, for example, a correction rect. */
 - (CGRect)firstRectForRange:(UITextRange *)range
 {
-    CCLOG("firstRectForRange");
-    return CGRectNull;
+    // AWFramework addition
+    IndexedRange* indexedRange = (IndexedRange *)range;
+    AWTextRange textRange = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchTextRangeBetweenPositions(indexedRange.range.location, indexedRange.range.location + indexedRange.range.length);
+    cocos2d::Rect rect = cocos2d::IMEDispatcher::sharedDispatcher()->dispatchFirstRect(textRange);
+    if (rect.equals(cocos2d::Rect::ZERO)) {
+        return CGRectNull;
+    }
+    else {
+        return CGRectMake(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
+    }
+
+//    CCLOG("firstRectForRange");
+//    return CGRectNull;
 }
 - (CGRect)caretRectForPosition:(UITextPosition *)position
 {
-    CCLOG("caretRectForPosition");
+// AWFramework silence log statement
+//    CCLOG("caretRectForPosition");
     return caretRect_;
 }
 
@@ -713,23 +1033,27 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
 /* JS - Find the closest position to a given point */
 - (UITextPosition *)closestPositionToPoint:(CGPoint)point
 {
-    CCLOG("closestPositionToPoint");
+// AWFramework silence log statement
+//    CCLOG("closestPositionToPoint");
     return nil;
 }
 - (UITextPosition *)closestPositionToPoint:(CGPoint)point withinRange:(UITextRange *)range
 {
-    CCLOG("closestPositionToPoint");
+// AWFramework silence log statement
+//    CCLOG("closestPositionToPoint");
     return nil;
 }
 - (UITextRange *)characterRangeAtPoint:(CGPoint)point
 {
-    CCLOG("characterRangeAtPoint");
+// AWFramework silence log statement
+//    CCLOG("characterRangeAtPoint");
     return nil;
 }
 
 - (NSArray *)selectionRectsForRange:(UITextRange *)range
 {
-    CCLOG("selectionRectsForRange");
+// AWFramework silence log statement
+//    CCLOG("selectionRectsForRange");
     return nil;
 }
 

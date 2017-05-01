@@ -548,6 +548,10 @@ public:
      * @param contentSize   The untransformed size of the node.
      */
     virtual void setContentSize(const Size& contentSize);
+
+    // AWFramework addition
+    virtual void setContentSize(float width, float height);
+    
     /**
      * Returns the untransformed size of the node.
      *

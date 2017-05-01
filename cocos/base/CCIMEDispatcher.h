@@ -98,6 +98,60 @@ public:
      */
     void dispatchKeyboardDidHide(IMEKeyboardNotificationInfo& info);
 
+    // AWFramework additions
+    bool dispatchHasText();
+    std::string dispatchTextInRange(const AWTextRange& range);
+
+    // AWFramework additions
+    bool dispatchShouldChangeText(const AWTextRange& range, const std::string& replacementText);
+    void dispatchReplaceText(const AWTextRange& range, const std::string& replacementText);
+
+    // AWFramework additions
+    void dispatchSetSelectedTextRange(const AWTextRange& range);
+    AWTextRange dispatchSelectedTextRange();
+
+    // AWFramework additions
+    void dispatchSetMarkedTextRange(const AWTextRange& range);
+    AWTextRange dispatchMarkedTextRange();
+
+    // AWFramework additions
+    //    - (NSDictionary *)markedTextStyle
+    void dispatchSetMarkedText(const std::string& text, const AWTextRange& selectedRange);
+    void dispatchUnmarkText();
+
+    // AWFramework additions
+    void dispatchSetSelectionAffinity(AWTextStorageDirection direction);
+    AWTextStorageDirection dispatchSelectionAffinity();
+
+    // AWFramework additions
+    AWTextRange dispatchTextRangeBetweenPositions(const AWTextPosition& startPosition, const AWTextPosition& endPosition);
+    AWTextPosition dispatchOffsetTextPosition(const AWTextPosition& startPosition, const AWTextPosition& offset);
+    AWTextPosition dispatchOffsetTextPosition(const AWTextPosition& startPosition, const AWTextLayoutDirection& direction, const AWTextPosition& offset);
+
+    // AWFramework additions
+    AWTextPosition dispatchBeginningOfDocument();
+    AWTextPosition dispatchEndOfDocument();
+
+    // AWFramework additions
+    AWTextPositionComparison dispatchComparePositions(const AWTextPosition& firstPosition, const AWTextPosition& secondPosition);
+
+    // AWFramework additions
+    size_t dispatchOffsetBetweenTextPositions(const AWTextPosition& startPosition, const AWTextPosition& endPosition);
+    AWTextPosition dispatchFarthestPosition(const AWTextRange& range, const AWTextLayoutDirection& direction);
+    AWTextRange dispatchFarthestRange(const AWTextPosition& startPosition, const AWTextLayoutDirection& direction);
+
+    // AWFramework additions
+    AWTextWritingDirection dispatchBaseWritingDirection(const AWTextPosition& position, const AWTextStorageDirection& direction);
+    void dispatchSetBaseWritingDirection(const AWTextWritingDirection& direction, const AWTextRange& range);
+
+    // AWFramework additions
+    Rect dispatchFirstRect(const AWTextRange& range);
+    Rect dispatchCaretRect(const AWTextPosition& position);
+    AWTextPosition dispatchClosestPosition(const Point& point);
+    std::vector<Rect> dispatchSelectionRects(const AWTextRange& range);
+    AWTextPosition dispatchClosestPosition(const Point& point, const AWTextRange& range);
+    AWTextRange dispatchCharacterRange(const Point& point);
+
 protected:
     friend class IMEDelegate;
 

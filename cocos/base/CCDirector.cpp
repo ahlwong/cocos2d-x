@@ -897,7 +897,8 @@ void Director::pushScene(Scene *scene)
     _nextScene = scene;
 }
 
-void Director::popScene(void)
+// AWFramework add transition argument
+void Director::popScene(std::function<Scene*(Scene* scene)> transition)
 {
     CCASSERT(_runningScene != nullptr, "running scene should not null");
     
@@ -918,16 +919,18 @@ void Director::popScene(void)
     else
     {
         _sendCleanupToScene = true;
-        _nextScene = _scenesStack.at(c - 1);
+        _nextScene = transition(_scenesStack.at(c - 1)); // AWFramework wrap scene in transition
     }
 }
 
-void Director::popToRootScene(void)
+// AWFramework add transition argument
+void Director::popToRootScene(std::function<Scene*(Scene* scene)> transition)
 {
-    popToSceneStackLevel(1);
+    popToSceneStackLevel(1, transition); // AWFramework pass transition
 }
 
-void Director::popToSceneStackLevel(int level)
+// AWFramework add transition argument
+void Director::popToSceneStackLevel(int level, std::function<Scene*(Scene* scene)> transition)
 {
     CCASSERT(_runningScene != nullptr, "A running Scene is needed");
     ssize_t c = _scenesStack.size();
@@ -979,7 +982,7 @@ void Director::popToSceneStackLevel(int level)
         --c;
     }
 
-    _nextScene = _scenesStack.back();
+    _nextScene = transition(_scenesStack.back()); // AWFramework wrap scene in transition
 
     // cleanup running scene
     _sendCleanupToScene = true;

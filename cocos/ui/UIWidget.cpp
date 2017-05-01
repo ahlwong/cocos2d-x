@@ -1029,7 +1029,8 @@ void Widget::interceptTouchEvent(cocos2d::ui::Widget::TouchEventType event, coco
 
 }
 
-void Widget::setPosition(const Vec2 &pos)
+// AWFramework change to setPosition(float x, float y) from setPosition(const Vec2 &pos)
+void Widget::setPosition(float x, float y)
 {
     if (!_usingLayoutComponent && _running)
     {
@@ -1039,16 +1040,39 @@ void Widget::setPosition(const Vec2 &pos)
             Size pSize = widgetParent->getContentSize();
             if (pSize.width <= 0.0f || pSize.height <= 0.0f)
             {
-                _positionPercent.setZero();
+                _positionPercent = Vec2::ZERO;
             }
             else
             {
-                _positionPercent.set(pos.x / pSize.width, pos.y / pSize.height);
+                // AWFramework change to x, y
+                _positionPercent = Vec2(x / pSize.width, y / pSize.height);
             }
         }
     }
-    ProtectedNode::setPosition(pos);
+    // AWFramework change to x, y
+    ProtectedNode::setPosition(x, y);
 }
+
+//void Widget::setPosition(const Vec2 &pos)
+//{
+//    if (!_usingLayoutComponent && _running)
+//    {
+//        Widget* widgetParent = getWidgetParent();
+//        if (widgetParent)
+//        {
+//            Size pSize = widgetParent->getContentSize();
+//            if (pSize.width <= 0.0f || pSize.height <= 0.0f)
+//            {
+//                _positionPercent.setZero();
+//            }
+//            else
+//            {
+//                _positionPercent.set(pos.x / pSize.width, pos.y / pSize.height);
+//            }
+//        }
+//    }
+//    ProtectedNode::setPosition(pos);
+//}
 
 void Widget::setPositionPercent(const Vec2 &percent)
 {

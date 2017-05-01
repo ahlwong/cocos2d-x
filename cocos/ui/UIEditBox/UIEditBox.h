@@ -495,7 +495,12 @@ namespace ui {
         TextHAlignment getTextHorizontalAlignment() const;
 
         /* override functions */
-        virtual void setPosition(const Vec2& pos) override;
+
+        // AWFramework change: setPosition(float x, float y) is designated setter
+        using Widget::setPosition;
+        virtual void setPosition(float x, float y) override;
+        
+//        virtual void setPosition(const Vec2& pos) override;
         virtual void setVisible(bool visible) override;
         virtual void setContentSize(const Size& size) override;
         virtual void setAnchorPoint(const Vec2& anchorPoint) override;

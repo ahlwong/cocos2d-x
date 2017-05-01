@@ -1114,6 +1114,15 @@ void Sprite::addChild(Node *child, int zOrder, int tag)
     {
         Sprite* childSprite = dynamic_cast<Sprite*>(child);
         CCASSERT( childSprite, "CCSprite only supports Sprites as children when using SpriteBatchNode");
+
+        // AWFramework empty sprite
+        if (childSprite->getTexture() == Director::getInstance()->getTextureCache()->getTextureForKey(CC_2x2_WHITE_IMAGE_KEY)) {
+            Size contentSize = childSprite->getContentSize();
+            childSprite->setTexture(_textureAtlas->getTexture());
+            childSprite->setTextureRect(Rect::ZERO);
+            childSprite->setContentSize(contentSize);
+        }
+
         CCASSERT(childSprite->getTexture()->getName() == _textureAtlas->getTexture()->getName(), "childSprite's texture name should be equal to _textureAtlas's texture name!");
         //put it in descendants array of batch node
         _batchNode->appendChild(childSprite);
@@ -1139,6 +1148,15 @@ void Sprite::addChild(Node *child, int zOrder, const std::string &name)
     {
         Sprite* childSprite = dynamic_cast<Sprite*>(child);
         CCASSERT( childSprite, "CCSprite only supports Sprites as children when using SpriteBatchNode");
+
+        // AWFramework empty sprite
+        if (childSprite->getTexture() == Director::getInstance()->getTextureCache()->getTextureForKey(CC_2x2_WHITE_IMAGE_KEY)) {
+            Size contentSize = childSprite->getContentSize();
+            childSprite->setTexture(_textureAtlas->getTexture());
+            childSprite->setTextureRect(Rect::ZERO);
+            childSprite->setContentSize(contentSize);
+        }
+
         CCASSERT(childSprite->getTexture()->getName() == _textureAtlas->getTexture()->getName(),
                  "childSprite's texture name should be equal to _textureAtlas's texture name.");
         //put it in descendants array of batch node
@@ -1669,6 +1687,9 @@ void Sprite::setBatchNode(SpriteBatchNode *spriteBatchNode)
         _renderMode = RenderMode::QUAD_BATCHNODE;
         _transformToBatch = Mat4::IDENTITY;
         setTextureAtlas(_batchNode->getTextureAtlas()); // weak ref
+
+        // AWFramework addition
+        _reorderChildDirty = true;
     }
 }
 

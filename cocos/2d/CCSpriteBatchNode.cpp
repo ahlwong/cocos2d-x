@@ -130,6 +130,11 @@ SpriteBatchNode::SpriteBatchNode()
 
 SpriteBatchNode::~SpriteBatchNode()
 {
+    // AWFramework unset _batchNode ivar
+    for(const auto &sprite: _descendants) {
+        sprite->setBatchNode(nullptr);
+    }
+
     CC_SAFE_RELEASE(_textureAtlas);
 }
 
@@ -179,6 +184,15 @@ void SpriteBatchNode::addChild(Node *child, int zOrder, int tag)
     CCASSERT(child != nullptr, "child should not be null");
     CCASSERT(dynamic_cast<Sprite*>(child) != nullptr, "CCSpriteBatchNode only supports Sprites as children");
     Sprite *sprite = static_cast<Sprite*>(child);
+
+    // AWFramework empty sprite
+    if (sprite->getTexture() == Director::getInstance()->getTextureCache()->getTextureForKey("/cc_2x2_white_image")) {
+        Size contentSize = sprite->getContentSize();
+        sprite->setTexture(_textureAtlas->getTexture());
+        sprite->setTextureRect(Rect::ZERO);
+        sprite->setContentSize(contentSize);
+    }
+
     // check Sprite is using the same texture id
     CCASSERT(sprite->getTexture()->getName() == _textureAtlas->getTexture()->getName(), "CCSprite is not using the same texture id");
 
@@ -192,6 +206,15 @@ void SpriteBatchNode::addChild(Node * child, int zOrder, const std::string &name
     CCASSERT(child != nullptr, "child should not be null");
     CCASSERT(dynamic_cast<Sprite*>(child) != nullptr, "CCSpriteBatchNode only supports Sprites as children");
     Sprite *sprite = static_cast<Sprite*>(child);
+
+    // AWFramework empty sprite
+    if (sprite->getTexture() == Director::getInstance()->getTextureCache()->getTextureForKey("/cc_2x2_white_image")) {
+        Size contentSize = sprite->getContentSize();
+        sprite->setTexture(_textureAtlas->getTexture());
+        sprite->setTextureRect(Rect::ZERO);
+        sprite->setContentSize(contentSize);
+    }
+    
     // check Sprite is using the same texture id
     CCASSERT(sprite->getTexture()->getName() == _textureAtlas->getTexture()->getName(), "CCSprite is not using the same texture id");
     

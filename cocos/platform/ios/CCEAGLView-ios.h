@@ -97,12 +97,25 @@ Copyright (C) 2008 Apple Inc. All Rights Reserved.
     unsigned int               requestedSamples_;
     BOOL                    isUseUITextField;
 @private
-    NSString *              markedText_;
+// AWFramework remove marked text since implemented manually
+//    NSString *              markedText_;
     CGRect                  caretRect_;
     CGRect                  originalRect_;
     NSNotification*         keyboardShowNotification_;
     BOOL                    isKeyboardShown_;
 }
+
+// AWFramework added UITextInputTraits protocol
+@property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
+@property(nonatomic) UITextSpellCheckingType spellCheckingType;
+@property(nonatomic) BOOL enablesReturnKeyAutomatically;
+@property(nonatomic) UIKeyboardAppearance keyboardAppearance;
+@property(nonatomic) UIKeyboardType keyboardType;
+@property(nonatomic) UIReturnKeyType returnKeyType;
+@property(nonatomic, copy) UITextContentType textContentType;
+
+// AWFramework added UITextInput selection affinity
+@property(nonatomic) UITextStorageDirection selectionAffinity;
 
 @property(nonatomic, readonly) UITextPosition *beginningOfDocument;
 @property(nonatomic, readonly) UITextPosition *endOfDocument;

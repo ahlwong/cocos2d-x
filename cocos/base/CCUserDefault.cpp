@@ -217,6 +217,78 @@ int UserDefault::getIntegerForKey(const char* pKey, int defaultValue)
     return ret;
 }
 
+// AWFramework addition
+long UserDefault::getLongForKey(const char* pKey)
+{
+    return getLongForKey(pKey, 0);
+}
+
+// AWFramework addition
+long UserDefault::getLongForKey(const char* pKey, long defaultValue)
+{
+    const char* value = nullptr;
+    tinyxml2::XMLElement* rootNode;
+    tinyxml2::XMLDocument* doc;
+    tinyxml2::XMLElement* node;
+    node =  getXMLNodeForKey(pKey, &rootNode, &doc);
+    // find the node
+    if (node && node->FirstChild())
+    {
+        value = (const char*)(node->FirstChild()->Value());
+    }
+
+    long ret = defaultValue;
+
+    if (value)
+    {
+        ret = atol(value);
+    }
+
+    if(doc)
+    {
+        delete doc;
+    }
+
+
+    return ret;
+}
+
+// AWFramework addition
+long long UserDefault::getLongLongForKey(const char* pKey)
+{
+    return getLongLongForKey(pKey, 0);
+}
+
+// AWFramework addition
+long long UserDefault::getLongLongForKey(const char* pKey, long long defaultValue)
+{
+    const char* value = nullptr;
+    tinyxml2::XMLElement* rootNode;
+    tinyxml2::XMLDocument* doc;
+    tinyxml2::XMLElement* node;
+    node =  getXMLNodeForKey(pKey, &rootNode, &doc);
+    // find the node
+    if (node && node->FirstChild())
+    {
+        value = (const char*)(node->FirstChild()->Value());
+    }
+
+    long long ret = defaultValue;
+
+    if (value)
+    {
+        ret = atoll(value);
+    }
+
+    if(doc)
+    {
+        delete doc;
+    }
+    
+    
+    return ret;
+}
+
 float UserDefault::getFloatForKey(const char* pKey)
 {
     return getFloatForKey(pKey, 0.0f);
@@ -351,6 +423,40 @@ void UserDefault::setIntegerForKey(const char* pKey, int value)
     char tmp[50];
     memset(tmp, 0, 50);
     sprintf(tmp, "%d", value);
+
+    setValueForKey(pKey, tmp);
+}
+
+// AWFramework addition
+void UserDefault::setLongForKey(const char* pKey, long value)
+{
+    // check key
+    if (! pKey)
+    {
+        return;
+    }
+
+    // format the value
+    char tmp[50];
+    memset(tmp, 0, 50);
+    sprintf(tmp, "%ld", value);
+
+    setValueForKey(pKey, tmp);
+}
+
+// AWFramework addition
+void UserDefault::setLongLongForKey(const char* pKey, long long value)
+{
+    // check key
+    if (! pKey)
+    {
+        return;
+    }
+
+    // format the value
+    char tmp[50];
+    memset(tmp, 0, 50);
+    sprintf(tmp, "%lld", value);
 
     setValueForKey(pKey, tmp);
 }

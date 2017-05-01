@@ -86,7 +86,31 @@ public:
      * @js NA
      */
     virtual int getIntegerForKey(const char* key, int defaultValue);
-    
+
+    // AWFramework additions
+    /**
+     @brief Get long value by key, if the key doesn't exist, a default value will return.
+     You can set the default value, or it is 0.
+     * @js NA
+     */
+    long    getLongForKey(const char* pKey);
+    /**
+     * @js NA
+     */
+    long    getLongForKey(const char* pKey, long defaultValue);
+
+    // AWFramework additions
+    /**
+     @brief Get long long value by key, if the key doesn't exist, a default value will return.
+     You can set the default value, or it is 0.
+     * @js NA
+     */
+    long long getLongLongForKey(const char* pKey);
+    /**
+     * @js NA
+     */
+    long long getLongLongForKey(const char* pKey, long long defaultValue);
+
     /**
      * Get float value by key, if the key doesn't exist, will return 0.0.
      * @param key The key to get value.
@@ -171,6 +195,21 @@ public:
      * @js NA
      */
     virtual void setIntegerForKey(const char* key, int value);
+
+    // AWFramework addition
+    /**
+     @brief Set long value by key.
+     * @js NA
+     */
+    void    setLongForKey(const char* pKey, long value);
+
+    // AWFramework addition
+    /**
+     @brief Set long long value by key.
+     * @js NA
+     */
+    void    setLongLongForKey(const char* pKey, long long value);
+
     /**
      * Set float value by key.
      * @param key The key to set.

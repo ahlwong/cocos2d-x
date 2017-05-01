@@ -102,7 +102,8 @@ public:
      * @param normal    normal state texture.
      * @param texType    @see `TextureResType`
      */
-    void loadTextureNormal(const std::string& normal, TextureResType texType = TextureResType::LOCAL);
+    // AWFramework added virtual keyword
+    virtual void loadTextureNormal(const std::string& normal, TextureResType texType = TextureResType::LOCAL);
 
     /**
      * Load selected state texture for button.
@@ -110,7 +111,8 @@ public:
      * @param selected    selected state texture.
      * @param texType    @see `TextureResType`
      */
-    void loadTexturePressed(const std::string& selected, TextureResType texType = TextureResType::LOCAL);
+    // AWFramework added virtual keyword
+    virtual void loadTexturePressed(const std::string& selected, TextureResType texType = TextureResType::LOCAL);
 
     /**
      * Load disabled state texture for button.
@@ -118,7 +120,8 @@ public:
      * @param disabled    dark state texture.
      * @param texType    @see `TextureResType`
      */
-    void loadTextureDisabled(const std::string& disabled, TextureResType texType = TextureResType::LOCAL);
+    // AWFramework added virtual keyword
+    virtual void loadTextureDisabled(const std::string& disabled, TextureResType texType = TextureResType::LOCAL);
 
     /**
      * Sets capInsets for button.
@@ -204,7 +207,8 @@ public:
      * Change the content of button's title.
      *@param text The title in std::string.
      */
-    void setTitleText(const std::string& text);
+    // AWFramework added virtual keyword
+    virtual void setTitleText(const std::string& text);
 
     /**
      * Query the button title content.
@@ -228,7 +232,8 @@ public:
      * Change the font size of button's title
      *@param size Title font size in float.
      */
-    void setTitleFontSize(float size);
+    // AWFramework added virtual keyword
+    virtual void setTitleFontSize(float size);
 
     /**
      * Query the font size of button title
@@ -335,12 +340,18 @@ protected:
     void loadTextureDisabled(SpriteFrame* disabledSpriteFrame);
     void setupDisabledTexture(bool textureLoaded);
 
-    void normalTextureScaleChangedWithSize();
+    // AWFramework added virtual keyword
+    virtual void normalTextureScaleChangedWithSize();
+
+    // AWFramework added virtual keyword
     void pressedTextureScaleChangedWithSize();
+
+    // AWFramework added virtual keyword
     void disabledTextureScaleChangedWithSize();
 
     virtual void adaptRenderers() override;
-    void updateTitleLocation();
+    // AWFramework added virtual keyword
+    virtual void updateTitleLocation();
     void updateContentSize();
     void createTitleRenderer();
 

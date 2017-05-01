@@ -93,6 +93,17 @@ class SpriteBatchNode;
 class DrawNode;
 class EventListenerCustom;
 
+// AWFramework move LetterInfo and make public
+struct LetterInfo
+{
+    char16_t utf16Char;
+    bool valid;
+    float positionX;
+    float positionY;
+    int atlasIndex;
+    int lineIndex;
+};
+
 /**
  * @brief Label is a subclass of Node that knows how to render text labels.
  *
@@ -112,6 +123,14 @@ class EventListenerCustom;
 class CC_DLL Label : public Node, public LabelProtocol, public BlendProtocol
 {
 public:
+
+    // AWFramework addition for aw::Label letter quads
+    const Vector<SpriteBatchNode*>& getBatchNodes() const { return _batchNodes; }
+    const std::vector<LetterInfo>& getLettersInfo() const { return _lettersInfo; }
+
+    // AWFramework addition for letterOffsetY
+    float getLetterOffsetY() const { return _letterOffsetY; }
+
     enum class Overflow
     {
         //In NONE mode, the dimensions is (0,0) and the content size will change dynamically to fit the label.
@@ -332,7 +351,8 @@ public:
     virtual void setTextColor(const Color4B &color);
 
     /** Returns the text color of the Label.*/
-    const Color4B& getTextColor() const { return _textColor;}
+    // AWFramework added virtual keyword
+    virtual const Color4B& getTextColor() const { return _textColor;}
 
     /**
      * Enable shadow effect to Label.
@@ -621,15 +641,17 @@ CC_CONSTRUCTOR_ACCESS:
                      TextHAlignment hAlignment = TextHAlignment::LEFT, int maxLineWidth = 0);
 
 protected:
-    struct LetterInfo
-    {
-        char32_t utf32Char;
-        bool valid;
-        float positionX;
-        float positionY;
-        int atlasIndex;
-        int lineIndex;
-    };
+
+// AWFramework moved LetterInfo
+//    struct LetterInfo
+//    {
+//        char32_t utf32Char;
+//        bool valid;
+//        float positionX;
+//        float positionY;
+//        int atlasIndex;
+//        int lineIndex;
+//    };
 
     enum class LabelType {
         TTF,

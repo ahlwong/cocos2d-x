@@ -49,7 +49,10 @@ NS_CC_EXT_BEGIN
 class CC_EX_DLL AssetsManagerEx : public Ref
 {
 public:
-    
+
+    // AWFramework add getter for total files download count
+    int getTotalFiles() { return _totalToDownload; };
+
     //! Update states
     enum class State
     {
