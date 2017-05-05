@@ -213,12 +213,12 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
             else {
                 trailingX += letterDef.width * _bmfontScale;
             }
-            if (_enableWrap && _maxLineWidth > 0.f && nextTokenX > 0.f && letterX + letterDef.width * _bmfontScale > _maxLineWidth && nextChangeSize)
+            if (_enableWrap && _maxLineWidth > 0.f && nextTokenX > 0.f && trailingX > _maxLineWidth && nextChangeSize)
 //            if (_enableWrap && _maxLineWidth > 0.f && nextTokenX > 0.f && letterX + letterDef.width * _bmfontScale > _maxLineWidth
 //                && !StringUtils::isUnicodeSpace(character) && nextChangeSize)
             {
                 // AWFramework, trim trailing spaces
-                if (_hAlignment == TextHAlignment::RIGHT && _trimTrailingSpaceOnRightAlign) {
+                if (_trimLineSpaces && _hAlignment == TextHAlignment::RIGHT) {
                     _linesWidth.push_back(lastNonSpaceLetterRight);
                 }
                 else {
@@ -241,6 +241,11 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
             }
             letterPosition.y = (nextTokenY - letterDef.offsetY * _bmfontScale) / contentScaleFactor;
             recordLetterInfo(letterPosition, character, letterIndex, lineIndex);
+
+            // AWFramework, trim leading spaces
+            if (_trimLineSpaces && _hAlignment == TextHAlignment::LEFT && lastNonSpaceLetterRight == 0.0f && StringUtils::isUnicodeSpace(character)) {
+                nextChangeSize = false;
+            }
 
             if (nextChangeSize)
             {

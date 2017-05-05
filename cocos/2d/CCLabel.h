@@ -613,8 +613,8 @@ public:
     virtual void setGlobalZOrder(float globalZOrder) override;
 
     // AWFramework addition
-    virtual void setTrimTrailingSpaceOnRightAlignEnabled(bool enabled);
-    virtual bool isTrimTrailingSpaceOnRightAlignEnabled() const;
+    virtual void setTrimLineSpacesEnabled(bool enabled);
+    virtual bool isTrimLineSpacesEnabled() const;
 
     CC_DEPRECATED_ATTRIBUTE static Label* create(const std::string& text, const std::string& font, float fontSize,
         const Size& dimensions = Size::ZERO, TextHAlignment hAlignment = TextHAlignment::LEFT,
@@ -809,7 +809,7 @@ protected:
     bool _strikethroughEnabled;
 
     // AWFramework addition
-    bool _trimTrailingSpaceOnRightAlign;
+    bool _trimLineSpaces;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(Label);

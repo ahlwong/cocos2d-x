@@ -386,7 +386,7 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
 , _strikethroughEnabled(false)
 
 // AWFramework addition
-, _trimTrailingSpaceOnRightAlign(true)
+, _trimLineSpaces(true)
 
 {
     setAnchorPoint(Vec2::ANCHOR_MIDDLE);
@@ -531,7 +531,7 @@ void Label::reset()
     setRotationSkewX(0);        // reverse italics
 
     // AWFramework addition
-    _trimTrailingSpaceOnRightAlign = true;
+    _trimLineSpaces = true;
 }
 
 //  ETC1 ALPHA supports, for LabelType::BMFONT & LabelType::CHARMAP
@@ -2215,18 +2215,18 @@ void Label::updateLetterSpriteScale(Sprite* sprite)
 }
 
 // AWFramework addition
-void Label::setTrimTrailingSpaceOnRightAlignEnabled(bool enabled)
+void Label::setTrimLineSpacesEnabled(bool enabled)
 {
-    if (_trimTrailingSpaceOnRightAlign != enabled) {
-        _trimTrailingSpaceOnRightAlign = enabled;
+    if (_trimLineSpaces != enabled) {
+        _trimLineSpaces = enabled;
 
         _contentDirty = true;
     }
 }
 
-bool Label::isTrimTrailingSpaceOnRightAlignEnabled() const
+bool Label::isTrimLineSpacesEnabled() const
 {
-    return _trimTrailingSpaceOnRightAlign;
+    return _trimLineSpaces;
 }
 
 NS_CC_END
