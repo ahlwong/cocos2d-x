@@ -921,7 +921,8 @@ protected:
     virtual void copyClonedWidgetChildren(Widget* model);
     
     Widget* getWidgetParent();
-    void updateContentSizeWithTextureSize(const Size& size);
+    // AWFramework added virtual keyword
+    virtual void updateContentSizeWithTextureSize(const Size& size);
     
     bool isAncestorsEnabled();
     Widget* getAncestorWidget(Node* node);

@@ -143,6 +143,9 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
     float longestLine = 0.f;
     float letterRight = 0.f;
 
+    // AWFramework addition
+    float lastNonSpaceLetterRight = 0.0f;
+
     auto contentScaleFactor = CC_CONTENT_SCALE_FACTOR();
     float lineSpacing = _lineSpacing * contentScaleFactor;
     float highestY = 0.f;
@@ -160,6 +163,10 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
         {
             _linesWidth.push_back(letterRight);
             letterRight = 0.f;
+
+            // AWFramework addition
+            lastNonSpaceLetterRight = 0.0f;
+
             lineIndex++;
             nextTokenX = 0.f;
             nextTokenY -= _lineHeight*_bmfontScale + lineSpacing;
@@ -210,8 +217,18 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
 //            if (_enableWrap && _maxLineWidth > 0.f && nextTokenX > 0.f && letterX + letterDef.width * _bmfontScale > _maxLineWidth
 //                && !StringUtils::isUnicodeSpace(character) && nextChangeSize)
             {
-                _linesWidth.push_back(letterRight);
+                // AWFramework, trim trailing spaces
+                if (_hAlignment == TextHAlignment::RIGHT && _trimTrailingSpaceOnRightAlign) {
+                    _linesWidth.push_back(lastNonSpaceLetterRight);
+                }
+                else {
+                    _linesWidth.push_back(letterRight);
+                }
                 letterRight = 0.f;
+
+                // AWFramework addition
+                lastNonSpaceLetterRight = 0.0f;
+
                 lineIndex++;
                 nextTokenX = 0.f;
                 nextTokenY -= (_lineHeight*_bmfontScale + lineSpacing);
@@ -248,6 +265,12 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
 
         nextTokenX = nextLetterX;
         letterRight = tokenRight;
+
+        // AWFramework addition
+        if (tokenLen > 1 || !StringUtils::isUnicodeSpace(character)) {
+            lastNonSpaceLetterRight = tokenRight;
+        }
+
         if (highestY < tokenHighestY)
             highestY = tokenHighestY;
         if (lowestY > tokenLowestY)

@@ -612,6 +612,10 @@ public:
     virtual void removeChild(Node* child, bool cleanup = true) override;
     virtual void setGlobalZOrder(float globalZOrder) override;
 
+    // AWFramework addition
+    virtual void setTrimTrailingSpaceOnRightAlignEnabled(bool enabled);
+    virtual bool isTrimTrailingSpaceOnRightAlignEnabled() const;
+
     CC_DEPRECATED_ATTRIBUTE static Label* create(const std::string& text, const std::string& font, float fontSize,
         const Size& dimensions = Size::ZERO, TextHAlignment hAlignment = TextHAlignment::LEFT,
         TextVAlignment vAlignment = TextVAlignment::TOP);
@@ -803,6 +807,9 @@ protected:
     bool _boldEnabled;
     DrawNode* _underlineNode;
     bool _strikethroughEnabled;
+
+    // AWFramework addition
+    bool _trimTrailingSpaceOnRightAlign;
 
 private:
     CC_DISALLOW_COPY_AND_ASSIGN(Label);

@@ -384,6 +384,10 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
 , _boldEnabled(false)
 , _underlineNode(nullptr)
 , _strikethroughEnabled(false)
+
+// AWFramework addition
+, _trimTrailingSpaceOnRightAlign(true)
+
 {
     setAnchorPoint(Vec2::ANCHOR_MIDDLE);
     reset();
@@ -525,6 +529,9 @@ void Label::reset()
     }
     _strikethroughEnabled = false;
     setRotationSkewX(0);        // reverse italics
+
+    // AWFramework addition
+    _trimTrailingSpaceOnRightAlign = true;
 }
 
 //  ETC1 ALPHA supports, for LabelType::BMFONT & LabelType::CHARMAP
@@ -2205,6 +2212,21 @@ void Label::updateLetterSpriteScale(Sprite* sprite)
             sprite->setScale(1.0);
         }
     }
+}
+
+// AWFramework addition
+void Label::setTrimTrailingSpaceOnRightAlignEnabled(bool enabled)
+{
+    if (_trimTrailingSpaceOnRightAlign != enabled) {
+        _trimTrailingSpaceOnRightAlign = enabled;
+
+        _contentDirty = true;
+    }
+}
+
+bool Label::isTrimTrailingSpaceOnRightAlignEnabled() const
+{
+    return _trimTrailingSpaceOnRightAlign;
 }
 
 NS_CC_END
