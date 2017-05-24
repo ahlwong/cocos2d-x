@@ -225,6 +225,13 @@
     }
 }
 
+// AWFramework addition
+- (void) connection:(NSURLConnection *)connection didSendBodyData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
+{
+    _totalBytesWritten = totalBytesWritten;
+    _totalBytesExpectedToWrite = totalBytesExpectedToWrite;
+}
+
 @end
 
 #endif // #if (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)

@@ -59,6 +59,10 @@
 
 @property (strong) NSRunLoop *runLoop;
 
+// AWFramework addition
+@property (readonly) NSInteger totalBytesWritten;
+@property (readonly) NSInteger totalBytesExpectedToWrite;
+
 // instructs the class to start the request.
 -(void) startRequest:(NSURLRequest*)request;
 

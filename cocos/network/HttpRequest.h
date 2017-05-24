@@ -31,6 +31,9 @@
 #include "base/CCRef.h"
 #include "base/ccMacros.h"
 
+// AWFramework addition
+#include "base/CCDirector.h"
+
 /**
  * @addtogroup network
  * @{
@@ -338,6 +341,20 @@ public:
         return _headers;
     }
 
+    // AWFramework addition
+    void dispatchUploadProgressCallback(long totalBytesWritten, long totalBytesExpectedToWrite)
+    {
+        Director::getInstance()->getScheduler()->performFunctionInCocosThread([this, totalBytesWritten, totalBytesExpectedToWrite] {
+            if (_uploadProgressCallback) {
+                _uploadProgressCallback(totalBytesWritten, totalBytesExpectedToWrite);
+            }
+        });
+    }
+    const std::function<void (long totalBytesWritten, long totalBytesExpectedToWrite)>& getUploadProgressCallback() const;
+    void setUploadProgressCallback(const std::function<void (long totalBytesWritten, long totalBytesExpectedToWrite)>& callback) {
+        _uploadProgressCallback = callback;
+    }
+
 private:
     void doSetResponseCallback(Ref* pTarget, SEL_HttpResponse pSelector)
     {
@@ -365,6 +382,9 @@ protected:
     ccHttpRequestCallback       _pCallback;      /// C++11 style callbacks
     void*                       _pUserData;      /// You can add your customed data here
     std::vector<std::string>    _headers;        /// custom http headers
+
+    // AWFramework addition
+    std::function<void (long totalBytesWritten, long totalBytesExpectedToWrite)> _uploadProgressCallback;
 };
 
 }

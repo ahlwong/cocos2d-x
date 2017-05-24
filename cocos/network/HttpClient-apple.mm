@@ -221,6 +221,9 @@ static int processTask(HttpClient* client, HttpRequest* request, NSString* reque
     
     while( httpAsynConn.finish != true)
     {
+        // AWFramework addition
+        request->dispatchUploadProgressCallback((long)httpAsynConn.totalBytesWritten, (long)httpAsynConn.totalBytesExpectedToWrite);
+
         [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
     }
     
