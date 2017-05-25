@@ -266,7 +266,7 @@ long UserDefault::getLongForKey(const char* pKey, long defaultValue)
     }
 #endif
 
-    return getLongForKeyJNI(pKey, defaultValue);
+    return JniHelper::callStaticLongMethod(helperClassName, "getLongForKey", pKey, defaultValue);
 }
 
 // AWFramework addition
@@ -304,7 +304,7 @@ long long UserDefault::getLongLongForKey(const char* pKey, long long defaultValu
     }
 #endif
     
-    return getLongLongForKeyJNI(pKey, defaultValue);
+    return JniHelper::callStaticLongLongMethod(helperClassName, "getLongLongForKey", pKey, defaultValue);
 }
 
 float UserDefault::getFloatForKey(const char* pKey)
@@ -507,7 +507,7 @@ void UserDefault::setLongForKey(const char* pKey, long value)
     deleteNodeByKey(pKey);
 #endif
 
-    return setLongForKeyJNI(pKey, value);
+    JniHelper::callStaticVoidMethod(helperClassName, "setLongForKey", pKey, value);
 }
 
 // AWFramework addition
@@ -517,7 +517,7 @@ void UserDefault::setLongLongForKey(const char* pKey, long long value)
     deleteNodeByKey(pKey);
 #endif
 
-    return setLongLongForKeyJNI(pKey, value);
+    JniHelper::callStaticVoidMethod(helperClassName, "setLongLongForKey", pKey, value);
 }
 
 void UserDefault::setFloatForKey(const char* pKey, float value)
