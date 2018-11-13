@@ -1,5 +1,6 @@
 /****************************************************************************
-Copyright (c) 2013-2017 Chukong Technologies Inc.
+Copyright (c) 2013-2016 Chukong Technologies Inc.
+Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 
 http://www.cocos2d-x.org
 
@@ -353,7 +354,8 @@ protected:
     // AWFramework added virtual keyword
     virtual void updateTitleLocation();
     void updateContentSize();
-    void createTitleRenderer();
+    virtual void createTitleRenderer();
+    bool createTitleRendererIfNull();
 
     virtual Widget* createCloneInstance() override;
     virtual void copySpecialProperties(Widget* model) override;
@@ -393,15 +395,6 @@ protected:
     TextureResType _disabledTexType;
 
 private:
-    enum class FontType
-    {
-        SYSTEM,
-        TTF,
-        BMFONT
-    };
-
-    int _fontSize;
-    FontType _type;
     std::string _fontName;
 };
 
