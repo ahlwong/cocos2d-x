@@ -53,18 +53,27 @@
 {
     if (self = [super init])
     {
-        if (! sharegroup)
-        {
-            context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
-            if (! context_)
-                context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+        // AWFramework fallback to OpenGLES2 only for multisampling
+        if(!sharegroup) {
+            context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
         }
-        else
-        {
-            context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3 sharegroup:sharegroup];
-            if (!context_)
-                context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:sharegroup];
+        else {
+            context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:sharegroup];
         }
+
+        // AWFramework disable OpenGLES3, not compatible with multisampling
+//        if (! sharegroup)
+//        {
+//            context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+//            if (! context_)
+//                context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
+//        }
+//        else
+//        {
+//            context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3 sharegroup:sharegroup];
+//            if (!context_)
+//                context_ = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2 sharegroup:sharegroup];
+//        }
 
         if (!context_ || ![EAGLContext setCurrentContext:context_] )
         {

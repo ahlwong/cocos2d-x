@@ -219,7 +219,10 @@ FontAtlas * FontFreeType::createFontAtlas()
                 _fontAtlas->prepareLetterDefinitions(utf32);
             }
         }
-        this->autorelease();
+
+        // AWFramework fix
+        // Remove auto release, program expects returned atlas to be retained
+//        this->autorelease();
     }
     
     return _fontAtlas;

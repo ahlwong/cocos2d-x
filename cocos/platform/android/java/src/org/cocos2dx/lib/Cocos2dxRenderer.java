@@ -27,6 +27,10 @@ import android.opengl.GLSurfaceView;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+// AWFramework addition
+import android.graphics.Rect;
+
 public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
     // ===========================================================
     // Constants
@@ -167,6 +171,24 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
     private static native void nativeDeleteBackward();
     private static native String nativeGetContentText();
 
+    // AWFramework addition
+    private static native boolean nativeShouldChangeText(final int start, final int length, final String text);
+
+    // AWFramework addition
+    private static native void nativeReplaceText(final int start, final int length, final String text);
+
+    // AWFramework addition
+    private static native void nativeKeyboardWillShow(final float duration, final float beginX, final int beginY, final int beginWidth, final int beginHeight, final int endX, final int endY, final int endWidth, final int endHeight);
+
+    // AWFramework addition
+    private static native void nativeKeyboardDidShow(final float duration, final float beginX, final int beginY, final int beginWidth, final int beginHeight, final int endX, final int endY, final int endWidth, final int endHeight);
+
+    // AWFramework addition
+    private static native void nativeKeyboardWillHide(final float duration, final float beginX, final int beginY, final int beginWidth, final int beginHeight, final int endX, final int endY, final int endWidth, final int endHeight);
+
+    // AWFramework addition
+    private static native void nativeKeyboardDidHide(final float duration, final float beginX, final int beginY, final int beginWidth, final int beginHeight, final int endX, final int endY, final int endWidth, final int endHeight);
+
     public void handleInsertText(final String text) {
         Cocos2dxRenderer.nativeInsertText(text);
     }
@@ -177,6 +199,42 @@ public class Cocos2dxRenderer implements GLSurfaceView.Renderer {
 
     public String getContentText() {
         return Cocos2dxRenderer.nativeGetContentText();
+    }
+
+    // AWFramework addition
+    public boolean handleShouldChangeText(final int start, final int length, final String text)
+    {
+        return Cocos2dxRenderer.nativeShouldChangeText(start, length, text);
+    }
+
+    // AWFramework addition
+    public void handleReplaceText(final int start, final int length, final String text)
+    {
+        Cocos2dxRenderer.nativeReplaceText(start, length, text);
+    }
+
+    // AWFramework addition
+    public void handleKeyboardWillShow(final float duration, final Rect begin, final Rect end)
+    {
+        Cocos2dxRenderer.nativeKeyboardWillShow(duration, begin.left, begin.top, begin.right - begin.left, begin.bottom - begin.top, end.left, end.top, end.right - end.left, end.bottom - end.top);
+    }
+
+    // AWFramework addition
+    public void handleKeyboardDidShow(final float duration, final Rect begin, final Rect end)
+    {
+        Cocos2dxRenderer.nativeKeyboardDidShow(duration, begin.left, begin.top, begin.right - begin.left, begin.bottom - begin.top, end.left, end.top, end.right - end.left, end.bottom - end.top);
+    }
+
+    // AWFramework addition
+    public void handleKeyboardWillHide(final float duration, final Rect begin, final Rect end)
+    {
+        Cocos2dxRenderer.nativeKeyboardWillHide(duration, begin.left, begin.top, begin.right - begin.left, begin.bottom - begin.top, end.left, end.top, end.right - end.left, end.bottom - end.top);
+    }
+
+    // AWFramework addition
+    public void handleKeyboardDidHide(final float duration, final Rect begin, final Rect end)
+    {
+        Cocos2dxRenderer.nativeKeyboardDidHide(duration, begin.left, begin.top, begin.right - begin.left, begin.bottom - begin.top, end.left, end.top, end.right - end.left, end.bottom - end.top);
     }
 
     // ===========================================================

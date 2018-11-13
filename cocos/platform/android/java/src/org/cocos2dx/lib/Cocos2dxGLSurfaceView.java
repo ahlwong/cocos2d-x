@@ -35,6 +35,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
+// AWFramework additions
+import android.util.Pair;
+import android.text.InputType;
+import android.view.inputmethod.EditorInfo;
+import android.view.ViewTreeObserver;
+import android.graphics.Rect;
+
 public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     // ===========================================================
     // Constants
@@ -44,6 +51,10 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 
     private final static int HANDLER_OPEN_IME_KEYBOARD = 2;
     private final static int HANDLER_CLOSE_IME_KEYBOARD = 3;
+
+    // AWFramework additions
+    private final static int HANDLER_SET_SELECTED_TEXT_RANGE = 4;
+    private final static int HANDLER_SET_KEYBOARD_INPUT_TYPE_IME_OPTIONS = 5;
 
     // ===========================================================
     // Fields
@@ -76,6 +87,11 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     public void setMultipleTouchEnabled(boolean multipleTouchEnabled) {
         this.mMultipleTouchEnabled = multipleTouchEnabled;
     }
+
+    // AWFramework additions
+    private boolean mKeyboardVisible = false;
+    private int mKeyboardDiscrepancy = 0;
+    private Rect mKeyboardRect;
 
     // ===========================================================
     // Constructors
@@ -128,9 +144,85 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
                             Log.d("GLSurfaceView", "HideSoftInput");
                         }
                         break;
+
+                    // AWFramework addition
+                    case HANDLER_SET_SELECTED_TEXT_RANGE:
+                        if (null != Cocos2dxGLSurfaceView.this.mCocos2dxEditText) {
+                            final Pair pair = (Pair) msg.obj;
+
+                            // Update the contents on edit text before computing selected text range because native code may have changed text
+                            final String text = mCocos2dxRenderer.getContentText();
+                            if (!Cocos2dxGLSurfaceView.this.mCocos2dxEditText.getText().toString().equals(text)) {
+                                Cocos2dxGLSurfaceView.this.mCocos2dxEditText.removeTextChangedListener(Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper);
+                                Cocos2dxGLSurfaceView.this.mCocos2dxEditText.setText(text);
+                                Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper.setOriginText(text);
+                                Cocos2dxGLSurfaceView.this.mCocos2dxEditText.addTextChangedListener(Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper);
+                            }
+
+                            int length = Cocos2dxGLSurfaceView.this.mCocos2dxEditText.getText().length();
+                            int first = ((Integer)pair.first).intValue();
+                            first = Math.min(first, length);
+                            int second = ((Integer)pair.second).intValue();
+                            second = Math.min(second, length);
+                            Cocos2dxGLSurfaceView.this.mCocos2dxEditText.setSelection(first, second);
+                            Log.d("GLSurfaceView", "SetSelectedTextRange");
+                        }
+                        break;
+
+                    // AWFramework addition
+                    case HANDLER_SET_KEYBOARD_INPUT_TYPE_IME_OPTIONS:
+                        if (null != Cocos2dxGLSurfaceView.this.mCocos2dxEditText) {
+                            final Pair pair = (Pair) msg.obj;
+                            int length = Cocos2dxGLSurfaceView.this.mCocos2dxEditText.getText().length();
+                            int inputType = ((Integer)pair.first).intValue();
+                            int imeOptions = ((Integer)pair.second).intValue();
+                            Cocos2dxGLSurfaceView.this.mCocos2dxEditText.setInputType(inputType);
+                            Cocos2dxGLSurfaceView.this.mCocos2dxEditText.setImeOptions(imeOptions);
+                            Log.d("GLSurfaceView", "SetInputTypeAndIMEOptions");
+                        }
+                        break;
                 }
             }
         };
+
+        // AWFramework addition
+        final Activity activity = (Activity)this.getContext();
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                Rect frame = new Rect();
+                View rootview = activity.getWindow().getDecorView();
+                rootview.getWindowVisibleDisplayFrame(frame);
+
+                int screenHeight = rootview.getRootView().getHeight() - frame.top;
+                int keyboardHeight = screenHeight - frame.height() - (mKeyboardDiscrepancy == 1 ? 0 : mKeyboardDiscrepancy);
+                if (mKeyboardDiscrepancy == 0) {
+                    mKeyboardDiscrepancy = keyboardHeight;
+                    if (keyboardHeight == 0) {
+                        mKeyboardDiscrepancy = 1;
+                    }
+                }
+
+                boolean visible = keyboardHeight > 100; // arbitrary threshold
+                if (mKeyboardVisible != visible) {
+                    float duration = 0.3f;
+                    if (mKeyboardVisible) {
+                        Rect begin = mKeyboardRect;
+                        Rect end = new Rect(frame.left, screenHeight, frame.right, screenHeight);
+                        Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleKeyboardWillHide(duration, begin, end);
+                        Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleKeyboardDidHide(duration, begin, end);
+                    }
+                    else {
+                        Rect begin = new Rect(frame.left, screenHeight, frame.right, screenHeight);
+                        Rect end = new Rect(frame.left, frame.bottom - frame.top, frame.right, screenHeight);
+                        Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleKeyboardWillShow(duration, begin, end);
+                        Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleKeyboardDidShow(duration, begin, end);
+                        mKeyboardRect = end;
+                    }
+                    mKeyboardVisible = visible;
+                }
+            }
+        });
     }
 
     // ===========================================================
@@ -166,6 +258,12 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
 
     public void setCocos2dxEditText(final Cocos2dxEditBox pCocos2dxEditText) {
         this.mCocos2dxEditText = pCocos2dxEditText;
+
+        // AWFramework addition
+        this.mCocos2dxEditText.setSingleLine(false);
+        this.mCocos2dxEditText.setMultilineEnabled(true);
+        this.mCocos2dxEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+
         if (null != this.mCocos2dxEditText && null != Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper) {
             this.mCocos2dxEditText.setOnEditorActionListener(Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper);
             this.requestFocus();
@@ -469,5 +567,183 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         }
         sb.append("]");
         Log.d(Cocos2dxGLSurfaceView.TAG, sb.toString());
+    }
+
+    // AWFramework addition
+    public static void setSelectedTextRange(final int start, final int end) {
+        final Message msg = new Message();
+        msg.what = Cocos2dxGLSurfaceView.HANDLER_SET_SELECTED_TEXT_RANGE;
+        msg.obj = Pair.create(new Integer(start), new Integer(end));
+        Cocos2dxGLSurfaceView.sHandler.sendMessage(msg);
+    }
+
+    // AWFramework addition
+    public void replaceText(final int start, final int length, final String text) {
+        this.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                if (Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleShouldChangeText(start, length, text)) {
+                    Cocos2dxGLSurfaceView.this.mCocos2dxRenderer.handleReplaceText(start, length, text);
+                }
+            }
+        });
+    }
+
+    // AWFramework addition
+    public static void setKeyboardConfiguration(final int type, final int autocapitalizationType, final int autocorrectionType, final int spellcheckingType, final int appearance, final int returnKeyType) {
+        int inputType = 0;
+        int imeOptions = 0;
+
+        // KeyboardType
+        switch(type) {
+            case 0: // KeyboardType_DEFAULT
+                inputType |= InputType.TYPE_CLASS_TEXT;
+                break;
+            case 1: // KeyboardType_ASCII_CAPABLE
+                inputType |= InputType.TYPE_CLASS_TEXT; // Default
+                break;
+            case 2: // KeyboardType_NUMBERS_AND_PUNCTUATION
+                inputType |= InputType.TYPE_CLASS_NUMBER; // Default
+                break;
+            case 3: // KeyboardType_URL
+                inputType |= InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI;
+                break;
+            case 4: // KeyboardType_NUMBER_PAD
+                inputType |= InputType.TYPE_CLASS_NUMBER;
+                break;
+            case 5: // KeyboardType_PHONE_PAD
+                inputType |= InputType.TYPE_CLASS_PHONE;
+                break;
+            case 6: // KeyboardType_NAME_PHONE_PAD
+                inputType |= InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
+                break;
+            case 7: // KeyboardType_EMAIL_ADDRESS
+                inputType |= InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+                break;
+            case 8: // KeyboardType_DECIMAL_PAD
+                inputType |= InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+                break;
+            case 9: // KeyboardType_TWITTER
+                inputType |= InputType.TYPE_CLASS_TEXT; // Default
+                break;
+            case 10: // KeyboardType_WEB_SEARCH
+                inputType |= InputType.TYPE_CLASS_TEXT; // Default
+                break;
+            case 11: // KeyboardType_ASCII_CAPABLE_NUMBER_PAD
+                inputType |= InputType.TYPE_CLASS_NUMBER; // Default
+                break;
+            case 12: // KeyboardType_ALPHABET
+                inputType |= InputType.TYPE_CLASS_TEXT; // Default
+                break;
+            case 13: // KeyboardType_PASSWORD
+                inputType |= InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD;
+                break;
+        }
+
+        if ((inputType & InputType.TYPE_CLASS_TEXT) > 0) {
+
+            // KeyboardAutocapitalizationType
+            switch(autocapitalizationType) {
+                case 0: // KeyboardAutocapitalizationType_DEFAULT
+                    inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+                    break;
+                case 1: // KeyboardAutocapitalizationType_NONE
+                    // Do nothing
+                    break;
+                case 2: // KeyboardAutocapitalizationType_ALL_CHARACTERS
+                    inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+                    break;
+                case 3: // KeyboardAutocapitalizationType_SENTENCES
+                    inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+                    break;
+                case 4: // KeyboardAutocapitalizationType_WORDS
+                    inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+                    break;
+            }
+        }
+
+        if ((inputType & InputType.TYPE_CLASS_TEXT) > 0) {
+
+            // KeyboardAutocorrectionType
+            switch (autocorrectionType) {
+                case 0: // KeyboardAutocorrectionType_DEFAULT
+                    inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+                    break;
+                case 1: // KeyboardAutocorrectionType_ON
+                    inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+                    break;
+                case 2: // KeyboardAutocorrectionType_OFF
+                    inputType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
+                    break;
+            }
+        }
+
+        if ((inputType & InputType.TYPE_CLASS_TEXT) > 0) {
+
+            // KeyboardSpellcheckingType
+            switch (spellcheckingType) {
+                case 0: // KeyboardSpellcheckingType_DEFAULT
+                    // Do nothing
+                    break;
+                case 1: // KeyboardSpellcheckingType_ON
+                    // Do nothing
+                    break;
+                case 2: // KeyboardSpellcheckingType_OFF
+                    // Do nothing
+                    break;
+            }
+        }
+
+        // KeyboardAppearance
+        switch(appearance) {
+            case 0: // KeyboardAppearance_DEFAULT
+                // Do nothing
+                break;
+            case 1: // KeyboardAppearance_DARK
+                // Do nothing
+                break;
+            case 2: // KeyboardAppearance_LIGHT
+                // Do nothing
+                break;
+            case 3: // KeyboardAppearance_ALERT
+                // Do nothing
+                break;
+        }
+
+        // KeyboardReturnKeyType
+        switch(returnKeyType) {
+            case 0: // KeyboardReturnKeyType_DEFAULT
+                imeOptions |= EditorInfo.IME_ACTION_UNSPECIFIED;
+                break;
+            case 1: // KeyboardReturnKeyType_GO
+                imeOptions |= EditorInfo.IME_ACTION_GO;
+                break;
+            case 2: // KeyboardReturnKeyType_DONE
+                imeOptions |= EditorInfo.IME_ACTION_DONE;
+                break;
+            case 3: // KeyboardReturnKeyType_JOIN
+                imeOptions |= EditorInfo.IME_ACTION_GO;
+                break;
+            case 4: // KeyboardReturnKeyType_NEXT
+                imeOptions |= EditorInfo.IME_ACTION_NEXT;
+                break;
+            case 5: // KeyboardReturnKeyType_SEND
+                imeOptions |= EditorInfo.IME_ACTION_SEND;
+                break;
+            case 6: // KeyboardReturnKeyType_ROUTE
+                imeOptions |= EditorInfo.IME_ACTION_GO;
+                break;
+            case 7: // KeyboardReturnKeyType_SEARCH
+                imeOptions |= EditorInfo.IME_ACTION_SEARCH;
+                break;
+            case 8: // KeyboardReturnKeyType_CONTINUE
+                imeOptions |= EditorInfo.IME_ACTION_NEXT;
+                break;
+        }
+
+        final Message msg = new Message();
+        msg.what = Cocos2dxGLSurfaceView.HANDLER_SET_KEYBOARD_INPUT_TYPE_IME_OPTIONS;
+        msg.obj = Pair.create(new Integer(inputType), new Integer(imeOptions));
+        Cocos2dxGLSurfaceView.sHandler.sendMessage(msg);
     }
 }

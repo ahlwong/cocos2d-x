@@ -39,7 +39,10 @@
 #include "platform/android/jni/JniHelper.h"
 
 #include "base/ccUTF8.h"
- 
+
+// AWFramework addition
+#include <jni.h>
+
 NS_CC_BEGIN
 
 namespace network {
@@ -50,7 +53,6 @@ typedef std::vector<std::string> HttpCookies;
 typedef HttpCookies::iterator HttpCookiesIter;
 
 static HttpClient* _httpClient = nullptr; // pointer to singleton
-    
 
 struct CookiesInfo
 {
@@ -81,182 +83,57 @@ size_t writeHeaderData(void* buffer, size_t sizes,HttpResponse* response)
     return sizes;
 }
 
+#pragma mark - HttpURLConnection
+
 class HttpURLConnection
 {
+
+#pragma mark - Instance Variables
+
+private:
+
+    HttpClient* _client;
+    std::string _requestMethod;
+    std::string _responseCookies;
+    std::string _cookieFileName;
+    std::string _url;
+
+    bool _receivedResponse;
+    int _responseCode;
+    char* _responseHeaders;
+    char* _responseContent;
+    int _responseContentLength;
+    char* _responseMessage;
+
+    std::condition_variable_any _conditionVariable;
+    std::mutex _mutex;
+
 public:
-    HttpURLConnection(HttpClient* httpClient)
-    :_client(httpClient)
-    ,_httpURLConnection(nullptr)
-    ,_requestmethod("")
-    ,_responseCookies("")
-    ,_cookieFileName("")
-    ,_contentLength(0)
-    {
 
-    }
+    void dispatchResponseCallback(int responseCode, char* responseHeaders, char* responseContent, int responseContentLength, char* responseMessage)
+    {
+        _receivedResponse = true;
+        _responseCode = responseCode;
+        _responseHeaders = responseHeaders;
+        _responseContent = responseContent;
+        _responseContentLength = responseContentLength;
+        _responseMessage = responseMessage;
 
-    ~HttpURLConnection()
-    {
-        if(_httpURLConnection != nullptr)
-        {
-            JniHelper::getEnv()->DeleteGlobalRef(_httpURLConnection);
-        }
-    }
-    
-    void setRequestMethod(const char* method)
-    {
-        _requestmethod = method;
-
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "setRequestMethod",
-                                           "(Ljava/net/HttpURLConnection;Ljava/lang/String;)V"))
-        {
-            jstring jstr = methodInfo.env->NewStringUTF(_requestmethod.c_str());
-            methodInfo.env->CallStaticVoidMethod(
-                                                 methodInfo.classID, methodInfo.methodID, _httpURLConnection, jstr);
-            methodInfo.env->DeleteLocalRef(jstr);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-    }
-    
-    bool init(HttpRequest* request)
-    {
-        createHttpURLConnection(request->getUrl());
-        if(!configure())
-        {
-            return false;
-        }
-        /* get custom header data (if set) */
-        HttpRequestHeaders headers=request->getHeaders();
-        if(!headers.empty())
-        {
-            /* append custom headers one by one */
-            for (auto& header : headers)
-            {
-                int len = header.length();
-                int pos = header.find(':');
-                if (-1 == pos || pos >= len)
-                {
-                    continue;
-                }
-                std::string str1 = header.substr(0, pos);
-                std::string str2 = header.substr(pos + 1, len - pos - 1);
-                addRequestHeader(str1.c_str(), str2.c_str());
-            }
-        }
-        
-        addCookiesForRequestHeader();
-        
-        return true;
-    }
-    
-    int connect()
-    {
-        int suc = 0;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "connect",
-                                           "(Ljava/net/HttpURLConnection;)I"))
-        {
-            suc = methodInfo.env->CallStaticIntMethod(
-                                                      methodInfo.classID, methodInfo.methodID, _httpURLConnection);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return suc;
-    }
-    
-    void disconnect()
-    {
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "disconnect",
-                                           "(Ljava/net/HttpURLConnection;)V"))
-        {
-            methodInfo.env->CallStaticVoidMethod(
-                                                 methodInfo.classID, methodInfo.methodID, _httpURLConnection);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-    }
-    
-    int getResponseCode()
-    {
-        int responseCode = 0;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseCode",
-                                           "(Ljava/net/HttpURLConnection;)I"))
-        {
-            responseCode = methodInfo.env->CallStaticIntMethod(
-                                                           methodInfo.classID, methodInfo.methodID, _httpURLConnection);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return responseCode;
-    }
-    
-    char* getResponseMessage()
-    {
-        char* message = nullptr;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseMessage",
-                                           "(Ljava/net/HttpURLConnection;)Ljava/lang/String;"))
-        {
-            jobject jObj = methodInfo.env->CallStaticObjectMethod(
-                                                                  methodInfo.classID, methodInfo.methodID, _httpURLConnection);
-            message = getBufferFromJString((jstring)jObj, methodInfo.env);
-            if (nullptr != jObj)
-            {
-                methodInfo.env->DeleteLocalRef(jObj);
-            }
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return message;
-    }
-    
-    void sendRequest(HttpRequest* request)
-    {
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "sendRequest",
-                                           "(Ljava/net/HttpURLConnection;[B)V"))
-        {
-            
-            jbyteArray bytearray;
-            ssize_t dataSize = request->getRequestDataSize();
-            bytearray = methodInfo.env->NewByteArray(dataSize);
-            methodInfo.env->SetByteArrayRegion(bytearray, 0, dataSize, (const jbyte*)request->getRequestData());
-            methodInfo.env->CallStaticVoidMethod(
-                                                 methodInfo.classID, methodInfo.methodID, _httpURLConnection, bytearray);
-            methodInfo.env->DeleteLocalRef(bytearray);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
+        _conditionVariable.notify_one();
     }
     
     size_t saveResponseCookies(const char* responseCookies, size_t count)
     {
-        if (nullptr == responseCookies || strlen(responseCookies) == 0 || count == 0)
-        {
+        if (nullptr == responseCookies || strlen(responseCookies) == 0 || count == 0) {
             return 0;
         }
         
-        if (_cookieFileName.empty())
-        {
+        if (_cookieFileName.empty()) {
             _cookieFileName = FileUtils::getInstance()->getWritablePath() + "cookieFile.txt";
         }
         
         FILE* fp = fopen(_cookieFileName.c_str(), "w");
-        if (nullptr == fp)
-        {
+        if (nullptr == fp) {
             CCLOG("can't create or open response cookie files");
             return 0;
         }
@@ -268,119 +145,28 @@ public:
         return count;
     }
     
-    char* getResponseHeaders()
+    std::string getResponseHeaderByKey(HttpResponse* response, const std::string& key)
     {
-        char* headers = nullptr;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseHeaders",
-                                           "(Ljava/net/HttpURLConnection;)Ljava/lang/String;"))
-        {
-            jobject jObj = methodInfo.env->CallStaticObjectMethod(
-                                                                  methodInfo.classID, methodInfo.methodID, _httpURLConnection);
-            headers = getBufferFromJString((jstring)jObj, methodInfo.env);
-            if (nullptr != jObj) {
-                methodInfo.env->DeleteLocalRef(jObj);
+        const std::vector<char>* header = response->getResponseHeader();
+        std::string headerString(header->begin(), header->end());
+
+        auto it = std::search(headerString.begin(), headerString.end(), key.begin(), key.end(), [](char ch1, char ch2) {
+            return std::toupper(ch1) == std::toupper(ch2);
+        });
+        if (it != headerString.end()) {
+            size_t startPos = it - headerString.begin();
+            size_t endPos = headerString.find_first_of("\n", startPos);
+            if (endPos == std::string::npos) {
+                return headerString.substr(startPos);
             }
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return headers;
-        
-    }
-    
-    char* getResponseContent(HttpResponse* response)
-    {
-        if (nullptr == response)
-        {
-            return nullptr;
-        }
-        
-        char* content = nullptr;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseContent",
-                                           "(Ljava/net/HttpURLConnection;)[B"))
-        {
-            jobject jObj = methodInfo.env->CallStaticObjectMethod(
-                                                                  methodInfo.classID, methodInfo.methodID, _httpURLConnection);
-            
-            _contentLength = getCStrFromJByteArray((jbyteArray)jObj, methodInfo.env, &content);
-            if (nullptr != jObj) 
-            {
-                methodInfo.env->DeleteLocalRef(jObj);
+            else {
+                return headerString.substr(startPos, endPos - startPos);
             }
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
         }
-        
-        return content;
+
+        return "";
     }
-    
-    char* getResponseHeaderByKey(const char* key)
-    {
-        char* value = nullptr;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseHeaderByKey",
-                                           "(Ljava/net/HttpURLConnection;Ljava/lang/String;)Ljava/lang/String;"))
-        {
-            jstring jstrKey = methodInfo.env->NewStringUTF(key);
-            jobject jObj = methodInfo.env->CallStaticObjectMethod(
-                                                                  methodInfo.classID, methodInfo.methodID, _httpURLConnection, jstrKey);
-            value = getBufferFromJString((jstring)jObj, methodInfo.env);
-            methodInfo.env->DeleteLocalRef(jstrKey);
-            if (nullptr != jObj) {
-                methodInfo.env->DeleteLocalRef(jObj);
-            }
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return value;
-    }
-    
-    int getResponseHeaderByKeyInt(const char* key)
-    {
-        int contentLength = 0;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseHeaderByKeyInt",
-                                           "(Ljava/net/HttpURLConnection;Ljava/lang/String;)I"))
-        {
-            jstring jstrKey = methodInfo.env->NewStringUTF(key);
-            contentLength = methodInfo.env->CallStaticIntMethod(
-                                                                methodInfo.classID, methodInfo.methodID, _httpURLConnection, jstrKey);
-            methodInfo.env->DeleteLocalRef(jstrKey);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return contentLength;
-    }
-    
-    char* getResponseHeaderByIdx(int idx)
-    {
-        char* header = nullptr;
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-                                           "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-                                           "getResponseHeaderByIdx",
-                                           "(Ljava/net/HttpURLConnection;I)Ljava/lang/String;"))
-        {
-            jobject jObj = methodInfo.env->CallStaticObjectMethod(
-                                                                  methodInfo.classID, methodInfo.methodID, _httpURLConnection, idx);
-            header = getBufferFromJString((jstring)jObj, methodInfo.env);
-            if (nullptr != jObj) {
-                methodInfo.env->DeleteLocalRef(jObj);
-            }
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
-        
-        return header;
-    }
-    
+
     const std::string& getCookieFileName() const
     {
         return _cookieFileName;
@@ -390,53 +176,179 @@ public:
     {
         _cookieFileName = filename;
     }
-    
-    int getContentLength()
+
+    void populateResponse(HttpResponse* response, char* responseMessage)
     {
-        return _contentLength;
+        // Response code
+        response->setResponseCode(_responseCode);
+
+        // Headers
+        if (_responseHeaders) {
+            writeHeaderData(_responseHeaders, strlen(_responseHeaders), response);
+        }
+        free(_responseHeaders);
+
+        // Cookies
+        std::string cookies = getResponseHeaderByKey(response, "set-cookie");
+        if (!cookies.empty()) {
+            saveResponseCookies(cookies.c_str(), cookies.size());
+        }
+
+        // Content
+        if (_responseContent) {
+            std::vector<char> * recvBuffer = (std::vector<char>*)response->getResponseData();
+            recvBuffer->clear();
+            recvBuffer->insert(recvBuffer->begin(), (char*)_responseContent, ((char*)_responseContent) + _responseContentLength);
+        }
+        free(_responseContent);
+
+        // Message
+        if (_responseMessage) {
+            strcpy(responseMessage, _responseMessage);
+            free(_responseMessage);
+        }
+
+        if (_responseCode == -1) {
+            response->setSucceed(false);
+            response->setErrorBuffer(responseMessage);
+        }
+        else {
+            response->setSucceed(true);
+        }
     }
-    
+
+    void wait()
+    {
+        while(!_receivedResponse) {
+            _conditionVariable.wait(_mutex);
+        }
+    }
+
 private:
-    void createHttpURLConnection(const std::string& url)
+
+    void createHttpURLConnection(HttpRequest* request)
     {
         JniMethodInfo methodInfo;
         if (JniHelper::getStaticMethodInfo(methodInfo,
-            "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
+            "org.cocos2dx.lib.Cocos2dxHttpURLConnection",
             "createHttpURLConnection",
-            "(Ljava/lang/String;)Ljava/net/HttpURLConnection;"))
+            "(Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;[BIIJJLjava/lang/String;)V"))
         {
-            _url = url;
-            jstring jurl = methodInfo.env->NewStringUTF(url.c_str());
-            jobject jObj = methodInfo.env->CallStaticObjectMethod(methodInfo.classID, methodInfo.methodID, jurl);
-            _httpURLConnection = methodInfo.env->NewGlobalRef(jObj);
-            methodInfo.env->DeleteLocalRef(jurl);
-            methodInfo.env->DeleteLocalRef(jObj);
+            // Method
+            setupRequestMethod(request);
+            jstring jMethod = methodInfo.env->NewStringUTF(_requestMethod.c_str());
+
+            // URL
+            _url = request->getUrl();
+            jstring jURL = methodInfo.env->NewStringUTF(_url.c_str());
+
+            // Headers
+            std::map<std::string, std::string> header;
+            setupRequestHeader(request, header);
+
+            jclass hashMapClass = methodInfo.env->FindClass("java/util/HashMap");
+            jmethodID hashMapInit = methodInfo.env->GetMethodID(hashMapClass, "<init>", "(I)V");
+            jobject hashMapObj = methodInfo.env->NewObject(hashMapClass, hashMapInit, header.size());
+            jmethodID hashMapPut = methodInfo.env->GetMethodID(hashMapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            for (auto it : header) {
+                jstring key = methodInfo.env->NewStringUTF(it.first.c_str());
+                jstring value = methodInfo.env->NewStringUTF(it.second.c_str());
+                methodInfo.env->CallObjectMethod(hashMapObj, hashMapPut, key, value);
+                methodInfo.env->DeleteLocalRef(key);
+                methodInfo.env->DeleteLocalRef(value);
+            }
+
+            // Data
+            jbyteArray jData;
+            ssize_t dataSize = request->getRequestDataSize();
+            jData = methodInfo.env->NewByteArray(dataSize);
+            methodInfo.env->SetByteArrayRegion(jData, 0, dataSize, (const jbyte*)request->getRequestData());
+
+            // Read and connect timeouts
+            jint jReadTimeout = _client ? _client->getTimeoutForRead() * 1000 : 30 * 1000; // Defaults to 30 seconds
+            jint jConnectTimeout = _client ? _client->getTimeoutForConnect() * 1000 : 30 * 1000; // Defaults to 30 seconds
+
+            // Request pointer
+            jlong jRequestPointer = (jlong)(intptr_t)request;
+
+            // Connection pointer
+            jlong jConnectionPointer = (jlong)(intptr_t)this;
+
+            // SSL filename
+            std::string sslFilename = _client && !_client->getSSLVerification().empty() ? FileUtils::getInstance()->fullPathForFilename(_client->getSSLVerification()) : "";
+            jstring jSSLFilename = methodInfo.env->NewStringUTF(sslFilename.c_str());
+
+            // Call
+            methodInfo.env->CallStaticVoidMethod(methodInfo.classID, methodInfo.methodID, jMethod, jURL, hashMapObj, jData, jReadTimeout, jConnectTimeout, jRequestPointer, jConnectionPointer, jSSLFilename);
+
+            // Cleanup
+            methodInfo.env->DeleteLocalRef(jMethod);
+            methodInfo.env->DeleteLocalRef(jURL);
+            methodInfo.env->DeleteLocalRef(hashMapObj);
+            methodInfo.env->DeleteLocalRef(jData);
+            methodInfo.env->DeleteLocalRef(jSSLFilename);
             methodInfo.env->DeleteLocalRef(methodInfo.classID);
         }
     }
 
-    void addRequestHeader(const char* key, const char* value) 
+    void setupRequestMethod(HttpRequest* request)
     {
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-            "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-            "addRequestHeader",
-            "(Ljava/net/HttpURLConnection;Ljava/lang/String;Ljava/lang/String;)V"))
+        HttpRequest::Type requestType = request->getRequestType();
+
+        if (HttpRequest::Type::GET != requestType &&
+            HttpRequest::Type::POST != requestType &&
+            HttpRequest::Type::PUT != requestType &&
+            HttpRequest::Type::DELETE != requestType)
         {
-            jstring jstrKey = methodInfo.env->NewStringUTF(key);
-            jstring jstrVal = methodInfo.env->NewStringUTF(value);
-            methodInfo.env->CallStaticVoidMethod(
-                methodInfo.classID, methodInfo.methodID, _httpURLConnection, jstrKey, jstrVal);
-            methodInfo.env->DeleteLocalRef(jstrKey);
-            methodInfo.env->DeleteLocalRef(jstrVal);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
+            CCASSERT(true, "CCHttpClient: unknown request type, only GET、POST、PUT、DELETE are supported");
+            return;
+        }
+
+        switch (requestType) {
+
+            case HttpRequest::Type::GET:
+                _requestMethod = "GET";
+                break;
+
+            case HttpRequest::Type::POST:
+                _requestMethod = "POST";
+                break;
+
+            case HttpRequest::Type::PUT:
+                _requestMethod = "PUT";
+                break;
+
+            case HttpRequest::Type::DELETE:
+                _requestMethod = "DELETE";
+                break;
+
+            default:
+                break;
         }
     }
-    
-    void addCookiesForRequestHeader()
+
+    void setupRequestHeader(HttpRequest* request, std::map<std::string, std::string>& headerMap)
     {
-        if(_client->getCookieFilename().empty())
-        {
+        HttpRequestHeaders headers = request->getHeaders();
+        if (!headers.empty()) {
+            for (auto& header : headers) {
+                int len = header.length();
+                int pos = header.find(':');
+                if (-1 == pos || pos >= len) {
+                    continue;
+                }
+                std::string key = header.substr(0, pos);
+                std::string value = header.substr(pos + 1, len - pos - 1);
+                headerMap[key] = value;
+            }
+        }
+
+        setupCookieRequestHeader(headerMap);
+    }
+
+    void setupCookieRequestHeader(std::map<std::string, std::string>& headerMap)
+    {
+        if (_client->getCookieFilename().empty()) {
             return;
         }
         
@@ -444,48 +356,46 @@ private:
         
         std::string cookiesInfo = FileUtils::getInstance()->getStringFromFile(_cookieFileName);
         
-        if (cookiesInfo.empty())
+        if (cookiesInfo.empty()) {
             return;
+        }
         
         HttpCookies cookiesVec;
         cookiesVec.clear();
         
         std::stringstream  stream(cookiesInfo);
         std::string item;
-        while (std::getline(stream, item, '\n'))
-        {
+        while (std::getline(stream, item, '\n')) {
             cookiesVec.push_back(item);
         }
         
-        if (cookiesVec.empty())
+        if (cookiesVec.empty()) {
             return;
+        }
         
         std::vector<CookiesInfo> cookiesInfoVec;
         cookiesInfoVec.clear();
 
-        for (auto& cookies : cookiesVec)
-        {
-            if (cookies.find("#HttpOnly_") != std::string::npos)
-            {
+        for (auto& cookies : cookiesVec) {
+            if (cookies.find("#HttpOnly_") != std::string::npos) {
                 cookies = cookies.substr(10);
             }
             
-            if(cookies.at(0) == '#')
+            if (cookies.at(0) == '#') {
                 continue;
+            }
             
             CookiesInfo co;
             std::stringstream streamInfo(cookies);
             std::string item;
             std::vector<std::string> elems;
             
-            while (std::getline(streamInfo, item, '\t'))
-            {
+            while (std::getline(streamInfo, item, '\t')) {
                 elems.push_back(item);
             }
             
             co.domain = elems[0];
-            if (co.domain.at(0) == '.')
-            {
+            if (co.domain.at(0) == '.') {
                 co.domain = co.domain.substr(1);
             }
             co.tailmatch = strcmp("TRUE", elems.at(1).c_str())?true: false;
@@ -499,125 +409,69 @@ private:
 
         std::string sendCookiesInfo = "";
         int cookiesCount = 0;
-        for (auto& cookieInfo : cookiesInfoVec)
-        {
-            if (_url.find(cookieInfo.domain) != std::string::npos)
-            {
+        for (auto& cookieInfo : cookiesInfoVec) {
+            if (_url.find(cookieInfo.domain) != std::string::npos) {
                 std::string keyValue = cookieInfo.key;
                 keyValue.append("=");
                 keyValue.append(cookieInfo.value);
-                if (cookiesCount != 0)
+                if (cookiesCount != 0) {
                     sendCookiesInfo.append(";");
+                }
                 
                 sendCookiesInfo.append(keyValue);
             }
             cookiesCount++;
         }
 
-        //set Cookie
-        addRequestHeader("Cookie",sendCookiesInfo.c_str());
+        headerMap["Cookie"] = sendCookiesInfo;
     }
 
-    void setReadAndConnectTimeout(int readMiliseconds, int connectMiliseconds)
+#pragma mark - Constructors
+
+public:
+
+    HttpURLConnection(HttpClient* httpClient)
+
+    : _client(httpClient)
+    , _requestMethod("")
+    , _responseCookies("")
+    , _cookieFileName("")
+    , _receivedResponse(false)
+    , _responseCode(-1)
+    , _responseHeaders(nullptr)
+    , _responseContent(nullptr)
+    , _responseContentLength(0)
+    , _responseMessage(nullptr)
+
     {
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-            "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-            "setReadAndConnectTimeout",
-            "(Ljava/net/HttpURLConnection;II)V"))
-        {
-            methodInfo.env->CallStaticVoidMethod(
-                methodInfo.classID, methodInfo.methodID, _httpURLConnection, readMiliseconds, connectMiliseconds);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
+
     }
 
-    void setVerifySSL()
+    ~HttpURLConnection()
     {
-        if(_client->getSSLVerification().empty())
-            return;
 
-        std::string fullpath = FileUtils::getInstance()->fullPathForFilename(_client->getSSLVerification());
-
-        JniMethodInfo methodInfo;
-        if (JniHelper::getStaticMethodInfo(methodInfo,
-            "org/cocos2dx/lib/Cocos2dxHttpURLConnection",
-            "setVerifySSL",
-            "(Ljava/net/HttpURLConnection;Ljava/lang/String;)V"))
-        {
-            jstring jstrfullpath = methodInfo.env->NewStringUTF(fullpath.c_str());
-            methodInfo.env->CallStaticVoidMethod(
-                methodInfo.classID, methodInfo.methodID, _httpURLConnection, jstrfullpath);
-            methodInfo.env->DeleteLocalRef(jstrfullpath);
-            methodInfo.env->DeleteLocalRef(methodInfo.classID);
-        }
     }
 
-    bool configure()
-    {   
-        if(nullptr == _httpURLConnection)
-        {
+    bool init(HttpRequest* request)
+    {
+        if (nullptr == _client) {
             return false;
         }
 
-        if(nullptr == _client)
-        {
-            return false;
-        }
-
-        setReadAndConnectTimeout(_client->getTimeoutForRead() * 1000, _client->getTimeoutForConnect() * 1000);
-
-        setVerifySSL();
+        createHttpURLConnection(request);
 
         return true;
     }
 
-    char* getBufferFromJString(jstring jstr, JNIEnv* env)
-    {
-        if (nullptr == jstr)
-        {
-            return nullptr;
-        }
-        std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(env, jstr);
-        return strdup(strValue.c_str());
-    }
-
-    int getCStrFromJByteArray(jbyteArray jba, JNIEnv* env, char** ppData)
-    {
-        if (nullptr == jba)
-        {
-            *ppData = nullptr;
-            return 0;
-        }
-
-        int len = env->GetArrayLength(jba);
-        char* str = (char*)malloc(sizeof(char)*len);
-        env->GetByteArrayRegion(jba, 0, len, (jbyte*)str);
-
-        *ppData = str;
-        return len;
-    }
-
-    const std::string& getCookieString() const
-    {
-        return _responseCookies;
-    }
-private:
-    HttpClient* _client;
-    jobject _httpURLConnection;
-    std::string _requestmethod;
-    std::string _responseCookies;
-    std::string _cookieFileName;
-    std::string _url;
-    int _contentLength;
 };
+
+#pragma mark - HttpClient
 
 // Process Response
 void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
 {
     auto request = response->getHttpRequest();
     HttpRequest::Type requestType = request->getRequestType();
-
     if (HttpRequest::Type::GET != requestType &&
         HttpRequest::Type::POST != requestType &&
         HttpRequest::Type::PUT != requestType &&
@@ -627,102 +481,16 @@ void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
         return;
     }
 
-    long responseCode = -1;
-    int  retValue = 0;
-
     HttpURLConnection urlConnection(this);
-    if(!urlConnection.init(request))
-    {
+    if (!urlConnection.init(request)) {
         response->setSucceed(false);
         response->setErrorBuffer("HttpURLConnetcion init failed");
         return;
     }
 
-    switch (requestType)
-    {
-        case HttpRequest::Type::GET:
-            urlConnection.setRequestMethod("GET");
-            break;
+    urlConnection.wait();
 
-        case HttpRequest::Type::POST:
-            urlConnection.setRequestMethod("POST");
-            break;
-
-        case HttpRequest::Type::PUT:
-            urlConnection.setRequestMethod("PUT");
-            break;
-
-        case HttpRequest::Type::DELETE:
-            urlConnection.setRequestMethod("DELETE");
-            break;
-        default:
-            break;
-    }
-
-    int suc = urlConnection.connect();
-    if (0 != suc)
-    {
-        response->setSucceed(false);
-        response->setErrorBuffer("connect failed");
-        response->setResponseCode(responseCode);
-        return;
-    }
-
-    if (HttpRequest::Type::POST == requestType ||
-        HttpRequest::Type::PUT == requestType)
-    {
-        urlConnection.sendRequest(request);
-    }
-
-    responseCode = urlConnection.getResponseCode();
-
-    char* headers = urlConnection.getResponseHeaders();
-    if (nullptr != headers)
-    {
-        writeHeaderData(headers, strlen(headers), response);
-    }
-    free(headers);
-
-    //get and save cookies
-    char* cookiesInfo = urlConnection.getResponseHeaderByKey("set-cookie");
-    if (nullptr != cookiesInfo)
-    {
-        urlConnection.saveResponseCookies(cookiesInfo, strlen(cookiesInfo));
-    }
-    free(cookiesInfo);
-
-    //content len
-    int contentLength = urlConnection.getResponseHeaderByKeyInt("Content-Length");
-    char* contentInfo = urlConnection.getResponseContent(response);
-    if (nullptr != contentInfo) 
-    {
-        std::vector<char> * recvBuffer = (std::vector<char>*)response->getResponseData();
-        recvBuffer->clear();
-        recvBuffer->insert(recvBuffer->begin(), (char*)contentInfo, ((char*)contentInfo) + urlConnection.getContentLength());
-    }
-    free(contentInfo);
-    
-    char *messageInfo = urlConnection.getResponseMessage();
-    if (messageInfo)
-    {
-        strcpy(responseMessage, messageInfo);
-        free(messageInfo);
-    }
-
-    urlConnection.disconnect();
-
-    // write data to HttpResponse
-    response->setResponseCode(responseCode);
-
-    if (responseCode == -1)
-    {
-        response->setSucceed(false);
-        response->setErrorBuffer(responseMessage);
-    }
-    else
-    {
-        response->setSucceed(true);
-    }
+    urlConnection.populateResponse(response, responseMessage);
 }
 
 // Worker thread
@@ -868,6 +636,8 @@ void HttpClient::setSSLVerification(const std::string& caFile)
     std::lock_guard<std::mutex> lock(_sslCaFileMutex);
     _sslCaFilename = caFile;
 }
+
+#pragma mark - Constructors
 
 HttpClient::HttpClient()
 : _isInited(false)
@@ -1040,6 +810,52 @@ const std::string& HttpClient::getSSLVerification()
 {
     std::lock_guard<std::mutex> lock(_sslCaFileMutex);
     return _sslCaFilename;
+}
+
+// AWFramework addition
+extern "C" {
+
+    static char* getBufferFromJString(jstring jstr, JNIEnv* env)
+    {
+        if (nullptr == jstr)
+        {
+            return nullptr;
+        }
+        std::string strValue = cocos2d::StringUtils::getStringUTFCharsJNI(env, jstr);
+        return strdup(strValue.c_str());
+    }
+
+    static int getCStrFromJByteArray(jbyteArray jba, JNIEnv* env, char** ppData)
+    {
+        if (nullptr == jba)
+        {
+            *ppData = nullptr;
+            return 0;
+        }
+
+        int len = env->GetArrayLength(jba);
+        char* str = (char*)malloc(sizeof(char)*len);
+        env->GetByteArrayRegion(jba, 0, len, (jbyte*)str);
+
+        *ppData = str;
+        return len;
+    }
+
+    JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxHttpURLConnection_nativeDispatchProgress(JNIEnv* env, jobject thiz, jlong requestPointer, jlong totalBytesWritten, jlong totalBytesExpectedToWrite)
+    {
+        HttpRequest* request = reinterpret_cast<HttpRequest*>((intptr_t)requestPointer);
+        request->dispatchUploadProgressCallback((long)totalBytesWritten, (long)totalBytesExpectedToWrite);
+    }
+
+    JNIEXPORT void JNICALL Java_org_cocos2dx_lib_Cocos2dxHttpURLConnection_nativeDispatchResponse(JNIEnv* env, jobject thiz, jlong connectionPointer, jint responseCode, jstring responseHeaders, jbyteArray responseContent, jstring responseMessage)
+    {
+        HttpURLConnection* connection = reinterpret_cast<HttpURLConnection*>((intptr_t)connectionPointer);
+
+        char* content = nullptr;
+        int contentLength = getCStrFromJByteArray(responseContent, env, &content);
+        
+        connection->dispatchResponseCallback((int)responseCode, getBufferFromJString(responseHeaders, env), content, contentLength, getBufferFromJString(responseMessage, env));
+    }
 }
 
 }

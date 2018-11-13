@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -52,57 +51,32 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import android.os.AsyncTask;
+
 public class Cocos2dxHttpURLConnection
 {
     private static final String POST_METHOD = "POST" ;
     private static final String PUT_METHOD = "PUT" ;
 
-    static HttpURLConnection createHttpURLConnection(String linkURL) {
-        URL url;
-        HttpURLConnection urlConnection;
-        try {
-            url = new URL(linkURL);
-            urlConnection = (HttpURLConnection) url.openConnection();
-            //Accept-Encoding
-            urlConnection.setRequestProperty("Accept-Encoding", "identity");
-            urlConnection.setDoInput(true);
-        } catch (Exception e) {
-            Log.e("URLConnection exception", e.toString());
-            return null;
+    static void createHttpURLConnection(String method, String url, Map<String, String> headers, byte[] data, int readTimeout, int connectTimeout, long requestPointer, long connectionPointer, String sslFilename) {
+
+        SSLContext sslContext = null;
+        if (null != sslFilename && !sslFilename.isEmpty()) {
+            sslContext = generateSSLContext(sslFilename);
         }
 
-        return urlConnection;
+        AWHttpPostAsyncTask asyncTask = new AWHttpPostAsyncTask(method, url, headers, data, readTimeout, connectTimeout, requestPointer, connectionPointer, sslContext);
+        asyncTask.execute();
     }
 
-    static void setReadAndConnectTimeout(HttpURLConnection urlConnection, int readMiliseconds, int connectMiliseconds) {
-        urlConnection.setReadTimeout(readMiliseconds);
-        urlConnection.setConnectTimeout(connectMiliseconds);
-    }
-
-    static void setRequestMethod(HttpURLConnection urlConnection, String method){
-        try {
-            urlConnection.setRequestMethod(method);
-            if(method.equalsIgnoreCase(POST_METHOD) || method.equalsIgnoreCase(PUT_METHOD)) {
-                urlConnection.setDoOutput(true);
-            }
-        } catch (ProtocolException e) {
-            Log.e("URLConnection exception", e.toString());
-        }
-
-    }
-
-    static void setVerifySSL(HttpURLConnection urlConnection, String sslFilename) {
-        if(!(urlConnection instanceof HttpsURLConnection))
-            return;
-        
-
-        HttpsURLConnection httpsURLConnection = (HttpsURLConnection)urlConnection;
-
+    private static SSLContext generateSSLContext(String sslFilename) {
+        SSLContext context = null;
         try {
             InputStream caInput = null;
             if (sslFilename.startsWith("/")) {
                 caInput = new BufferedInputStream(new FileInputStream(sslFilename));
-            }else {
+            }
+            else {
                 String assetString = "assets/";
                 String assetsfilenameString = sslFilename.substring(assetString.length());
                 caInput = new BufferedInputStream(Cocos2dxHelper.getActivity().getAssets().open(assetsfilenameString));
@@ -126,278 +100,315 @@ public class Cocos2dxHttpURLConnection
             tmf.init(keyStore);
 
             // Create an SSLContext that uses our TrustManager
-            SSLContext context = SSLContext.getInstance("TLS");
+            context = SSLContext.getInstance("TLS");
             context.init(null, tmf.getTrustManagers(), null);
-
-            httpsURLConnection.setSSLSocketFactory(context.getSocketFactory());
-        } catch (Exception e) {
-            Log.e("URLConnection exception", e.toString());
         }
+        catch (Exception e) {
+            Log.e("Cocos2dxHttpURLConnection generateSSLContext exception", e.toString());
+        }
+        return context;
     }
 
-    //Add header
-    static void addRequestHeader(HttpURLConnection urlConnection, String key, String value) {
-        urlConnection.setRequestProperty(key, value);
-    }
+    // AWFramework addition
+    private static native void nativeDispatchProgress(long requestPointer, long totalBytesWritten, long totalBytesExpectedToWrite);
+    private static native void nativeDispatchResponse(long connectionPointer, int responseCode, String responseHeaders, byte[] responseContent, String responseMessage);
 
-    static int connect(HttpURLConnection http) {
-        int suc = 0;
+    // AWFramework addition
+    private static class AWHttpPostAsyncTask extends AsyncTask<String, Void, Void>
+    {
+        private String method;
+        private String url;
+        private Map<String, String> headers;
+        private byte[] data;
+        private int readTimeout;
+        private int connectTimeout;
+        private long requestPointer;
+        private long connectionPointer;
+        private SSLContext sslContext;
 
-        try {
-            http.connect();
-        } catch (IOException e) {
-            Log.e("cocos2d-x debug info", "come in connect");
-            Log.e("cocos2d-x debug info", e.toString());
-            suc = 1;
+        public AWHttpPostAsyncTask(String method, String url, Map<String, String> headers, byte[] data, int readTimeout, int connectTimeout, long requestPointer, long connectionPointer, SSLContext sslContext) {
+            this.method = method;
+            this.url = url;
+            this.headers = headers;
+            this.data = data;
+            this.readTimeout = readTimeout;
+            this.connectTimeout = connectTimeout;
+            this.requestPointer = requestPointer;
+            this.connectionPointer = connectionPointer;
+            this.sslContext = sslContext;
         }
 
-        return suc;
-    }
+        // This is a function that we are overriding from AsyncTask. It takes Strings as parameters because that is what we defined for the parameters of our async task
+        @Override
+        protected Void doInBackground(String... params) {
 
-    static void disconnect(HttpURLConnection http) {
-        http.disconnect();
-    }
+            try {
 
-    static void sendRequest(HttpURLConnection http, byte[] byteArray) {
-        try {
-            OutputStream out = http.getOutputStream();
-            if(null !=  byteArray) {
-                out.write(byteArray);
-                out.flush();
+                // URL
+                URL url = new URL(this.url);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+
+                // Input
+                urlConnection.setRequestProperty("Accept-Encoding", "identity");
+                urlConnection.setDoInput(true);
+
+                // Timeouts
+                urlConnection.setReadTimeout(this.readTimeout);
+                urlConnection.setConnectTimeout(this.connectTimeout);
+
+                // Headers
+                if (null != this.headers) {
+                    for (Map.Entry<String, String> entry : this.headers.entrySet()) {
+                        urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                // Verify SSL
+                if (null != this.sslContext && (urlConnection instanceof HttpsURLConnection)) {
+                    try {
+                        HttpsURLConnection httpsURLConnection = (HttpsURLConnection) urlConnection;
+                        httpsURLConnection.setSSLSocketFactory(this.sslContext.getSocketFactory());
+                    }
+                    catch (Exception e) {
+                        Log.e("Cocos2dxHttpURLConnection verify ssl exception", e.toString());
+                    }
+                }
+
+                // Output
+                urlConnection.setRequestMethod(this.method);
+                if(POST_METHOD.equalsIgnoreCase(this.method) || PUT_METHOD.equalsIgnoreCase(this.method)) {
+                    urlConnection.setDoOutput(true);
+
+                    // Data
+                    try {
+                        if (null != this.data) {
+                            urlConnection.setFixedLengthStreamingMode(this.data.length);
+                        }
+
+                        OutputStream out = urlConnection.getOutputStream();
+                        if (null != this.data) {
+                            int progress = 0;
+                            int bytesRead = 0;
+                            int chunkSize = 1024;
+                            while (progress < this.data.length) {
+                                bytesRead = Math.min(chunkSize, this.data.length - progress);
+                                out.write(this.data, progress, bytesRead);
+                                out.flush();
+                                progress += bytesRead;
+
+                                // Dispatch progress
+                                nativeDispatchProgress(this.requestPointer, progress, this.data.length);
+                            }
+                        }
+                        out.close();
+                    } catch (IOException e) {
+                        Log.e("Cocos2dxHttpURLConnection output stream exception", e.toString());
+                    }
+                }
+
+                // Response code
+                int responseCode = getResponseCode(urlConnection);
+
+                // Response headers
+                String responseHeaders = getResponseHeaders(urlConnection);
+
+                // Response content
+                byte[] responseContent = getResponseContent(urlConnection);
+
+                // Response message
+                String responseMessage = getResponseMessage(urlConnection);
+
+                // Disconnect
+                urlConnection.disconnect();
+
+                // Dispatch response
+                nativeDispatchResponse(this.connectionPointer, responseCode, responseHeaders, responseContent, responseMessage);
             }
-            out.close();
-        } catch (IOException e) {
-            Log.e("URLConnection exception", e.toString());
-        }
-    }
+            catch (Exception e) {
+                Log.d("AWHttpPostAsyncTask", e.getLocalizedMessage());
+            }
 
-    static String getResponseHeaders(HttpURLConnection http) {
-        Map<String, List<String>> headers = http.getHeaderFields();
-        if (null == headers) {
             return null;
         }
 
-        String header = "";
-
-        for (Entry<String, List<String>> entry: headers.entrySet()) {
-            String key = entry.getKey();
-            if (null == key) {
-                header += listToString(entry.getValue(), ",") + "\n";
-            } else {
-                header += key + ":" + listToString(entry.getValue(), ",") + "\n";
+        private int getResponseCode(HttpURLConnection http) {
+            int code = 0;
+            try {
+                code = http.getResponseCode();
+            } catch (IOException e) {
+                Log.e("Cocos2dxHttpURLConnection getResponseCode exception", e.toString());
             }
+            return code;
         }
 
-        return header;
-    }
+        private String getResponseHeaders(HttpURLConnection http) {
+            Map<String, List<String>> headers = http.getHeaderFields();
+            if (null == headers) {
+                return null;
+            }
 
-    static String getResponseHeaderByIdx(HttpURLConnection http, int idx) {
-        Map<String, List<String>> headers = http.getHeaderFields();
-        if (null == headers) {
-            return null;
-        }
+            String header = "";
 
-        String header = null;
-
-        int counter = 0;
-        for (Entry<String, List<String>> entry: headers.entrySet()) {
-            if (counter == idx) {
+            for (Entry<String, List<String>> entry: headers.entrySet()) {
                 String key = entry.getKey();
                 if (null == key) {
-                    header = listToString(entry.getValue(), ",") + "\n";
-                } else {
-                    header = key + ":" + listToString(entry.getValue(), ",") + "\n";
+                    header += listToString(entry.getValue(), ",") + "\n";
                 }
-                break;
+                else if ("set-cookie".equalsIgnoreCase(key)) {
+                    header += key + ":" + combineCookies(entry.getValue(), http.getURL().getHost()) + "\n";
+                }
+                else {
+                    header += key + ":" + listToString(entry.getValue(), ",") + "\n";
+                }
             }
-            counter++;
+
+            return header;
         }
 
-        return header;
-    }
+        private byte[] getResponseContent(HttpURLConnection http) {
+            InputStream in;
+            try {
+                in = http.getInputStream();
+                String contentEncoding = http.getContentEncoding();
+                if (contentEncoding != null) {
+                    if(contentEncoding.equalsIgnoreCase("gzip")){
+                        in = new GZIPInputStream(http.getInputStream()); //reads 2 bytes to determine GZIP stream!
+                    }
+                    else if(contentEncoding.equalsIgnoreCase("deflate")){
+                        in = new InflaterInputStream(http.getInputStream());
+                    }
+                }
+            } catch (IOException e) {
+                in = http.getErrorStream();
+            } catch (Exception e) {
+                Log.e("Cocos2dxHttpURLConnection getResponseContent stream exception", e.toString());
+                return null;
+            }
 
-    static String getResponseHeaderByKey(HttpURLConnection http, String key) {
-        if (null == key) {
+            try {
+                byte[] buffer = new byte[1024];
+                int size   = 0;
+                ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
+                while((size = in.read(buffer, 0 , 1024)) != -1)
+                {
+                    bytestream.write(buffer, 0, size);
+                }
+                byte retbuffer[] = bytestream.toByteArray();
+                bytestream.close();
+                return retbuffer;
+            } catch (Exception e) {
+                Log.e("Cocos2dxHttpURLConnection getResponseContent buffer exception", e.toString());
+            }
+
             return null;
         }
 
-        Map<String, List<String>> headers = http.getHeaderFields();
-        if (null == headers) {
-            return null;
+        private String getResponseMessage(HttpURLConnection http) {
+            String msg;
+            try {
+                msg = http.getResponseMessage();
+            } catch (IOException e) {
+                msg = e.toString();
+                Log.e("Cocos2dxHttpURLConnection getResponseMessage exception", msg);
+            }
+
+            return msg;
         }
 
-        String header = null;
-
-        for (Entry<String, List<String>> entry: headers.entrySet()) {
-            if (key.equalsIgnoreCase(entry.getKey())) {
-                if ("set-cookie".equalsIgnoreCase(key)) {
-                    header = combinCookies(entry.getValue(), http.getURL().getHost());
-                } else {
-                    header = listToString(entry.getValue(), ",");
+        private static String listToString(List<String> list, String strInterVal) {
+            if (list == null) {
+                return null;
+            }
+            StringBuilder result = new StringBuilder();
+            boolean flag = false;
+            for (String str : list) {
+                if (flag) {
+                    result.append(strInterVal);
                 }
-                break;
-            }
-        }
-
-        return header;
-    }
-
-    static int getResponseHeaderByKeyInt(HttpURLConnection http, String key) {
-        String value = http.getHeaderField(key);
-
-        if (null == value) {
-            return 0;
-        } else {
-            return Integer.parseInt(value);
-        }
-    }
-
-    static byte[] getResponseContent(HttpURLConnection http) {
-        InputStream in;
-        try {            
-            in = http.getInputStream();
-            String contentEncoding = http.getContentEncoding();
-            if (contentEncoding != null) {
-                if(contentEncoding.equalsIgnoreCase("gzip")){
-                    in = new GZIPInputStream(http.getInputStream()); //reads 2 bytes to determine GZIP stream!
+                if (null == str) {
+                    str = "";
                 }
-                else if(contentEncoding.equalsIgnoreCase("deflate")){
-                    in = new InflaterInputStream(http.getInputStream());
+                result.append(str);
+                flag = true;
+            }
+            return result.toString();
+        }
+
+        private static String combineCookies(List<String> list, String hostDomain) {
+            StringBuilder sbCookies = new StringBuilder();
+            String domain    = hostDomain;
+            String tailmatch = "FALSE";
+            String path      = "/";
+            String secure    = "FALSE";
+            String key = null;
+            String value = null;
+            String expires = null;
+            for (String str : list) {
+                String[] parts = str.split(";");
+                for (String part : parts) {
+                    int firstIndex = part.indexOf("=");
+                    if (-1 == firstIndex)
+                        continue;
+
+                    String[] item =  {part.substring(0, firstIndex), part.substring(firstIndex + 1)};
+                    if ("expires".equalsIgnoreCase(item[0].trim())) {
+                        expires = str2Seconds(item[1].trim());
+                    } else if("path".equalsIgnoreCase(item[0].trim())) {
+                        path = item[1];
+                    } else if("secure".equalsIgnoreCase(item[0].trim())) {
+                        secure = item[1];
+                    } else if("domain".equalsIgnoreCase(item[0].trim())) {
+                        domain = item[1];
+                    } else if("version".equalsIgnoreCase(item[0].trim()) || "max-age".equalsIgnoreCase(item[0].trim())) {
+                        //do nothing
+                    } else {
+                        key = item[0];
+                        value = item[1];
+                    }
                 }
-            }       
-        } catch (IOException e) {
-            in = http.getErrorStream();
-        } catch (Exception e) {
-            Log.e("URLConnection exception", e.toString());
-            return null;
-        }
 
-        try {
-            byte[] buffer = new byte[1024];
-            int size   = 0;
-            ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
-            while((size = in.read(buffer, 0 , 1024)) != -1)
-            {
-                bytestream.write(buffer, 0, size);
+                if (null == domain) {
+                    domain = "none";
+                }
+
+                sbCookies.append(domain);
+                sbCookies.append('\t');
+                sbCookies.append(tailmatch);  //access
+                sbCookies.append('\t');
+                sbCookies.append(path);      //path
+                sbCookies.append('\t');
+                sbCookies.append(secure);    //secure
+                sbCookies.append('\t');
+                sbCookies.append(expires);   //expires
+                sbCookies.append("\t");
+                sbCookies.append(key);       //key
+                sbCookies.append("\t");
+                sbCookies.append(value);     //value
+                sbCookies.append('\n');
             }
-            byte retbuffer[] = bytestream.toByteArray();
-            bytestream.close();
-            return retbuffer;
-        } catch (Exception e) {
-            Log.e("URLConnection exception", e.toString());
+
+            return sbCookies.toString();
         }
 
-        return null;
-    }
-    
-    static int getResponseCode(HttpURLConnection http) {
-        int code = 0;
-        try {
-            code = http.getResponseCode();
-        } catch (IOException e) {
-            Log.e("URLConnection exception", e.toString());
-        }
-        return code;
-    }
+        private static String str2Seconds(String strTime) {
+            Calendar c = Calendar.getInstance();
+            long milliseconds = 0;
 
-    static String getResponseMessage(HttpURLConnection http) {
-        String msg;
-        try {
-            msg = http.getResponseMessage();
-        } catch (IOException e) {
-            msg = e.toString();
-            Log.e("URLConnection exception", msg);
-        }
+            try {
+                c.setTime(new SimpleDateFormat("EEE, dd-MMM-yy hh:mm:ss zzz", Locale.US).parse(strTime));
+                milliseconds = c.getTimeInMillis() / 1000;
+            } catch (ParseException ex) {
 
-        return msg;
-    }
-
-    public static String listToString(List<String> list, String strInterVal) {
-        if (list == null) {
-            return null;
-        }
-        StringBuilder result = new StringBuilder();
-        boolean flag = false;
-        for (String str : list) {
-            if (flag) {
-                result.append(strInterVal);
-            }
-            if (null == str) {
-                str = "";
-            }
-            result.append(str);
-            flag = true;
-        }
-        return result.toString();
-    }
-
-    public static String combinCookies(List<String> list, String hostDomain) {
-        StringBuilder sbCookies = new StringBuilder();
-        String domain    = hostDomain;
-        String tailmatch = "FALSE";
-        String path      = "/";
-        String secure    = "FALSE";
-        String key = null;
-        String value = null;
-        String expires = null;
-        for (String str : list) {
-            String[] parts = str.split(";");
-            for (String part : parts) {
-                int firstIndex = part.indexOf("=");
-                if (-1 == firstIndex)
-                    continue;
-
-                String[] item =  {part.substring(0, firstIndex), part.substring(firstIndex + 1)};
-                if ("expires".equalsIgnoreCase(item[0].trim())) {
-                    expires = str2Seconds(item[1].trim());
-                } else if("path".equalsIgnoreCase(item[0].trim())) {
-                    path = item[1];
-                } else if("secure".equalsIgnoreCase(item[0].trim())) {
-                    secure = item[1];
-                } else if("domain".equalsIgnoreCase(item[0].trim())) {
-                    domain = item[1];
-                } else if("version".equalsIgnoreCase(item[0].trim()) || "max-age".equalsIgnoreCase(item[0].trim())) {
-                    //do nothing
-                } else {
-                    key = item[0];
-                    value = item[1];
+                // AWFramework addition, fixes expected format
+                try {
+                    c.setTime(new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss zzz", Locale.US).parse(strTime));
+                    milliseconds = c.getTimeInMillis() / 1000;
+                } catch (ParseException e) {
+                    Log.e("Cocos2dxHttpURLConnection str2Seconds exception", e.toString());
                 }
             }
 
-            if (null == domain) {
-                domain = "none";
-            }
-
-            sbCookies.append(domain);
-            sbCookies.append('\t');
-            sbCookies.append(tailmatch);  //access
-            sbCookies.append('\t');
-            sbCookies.append(path);      //path
-            sbCookies.append('\t');
-            sbCookies.append(secure);    //secure
-            sbCookies.append('\t');
-            sbCookies.append(expires);   //expires
-            sbCookies.append("\t");
-            sbCookies.append(key);       //key
-            sbCookies.append("\t");
-            sbCookies.append(value);     //value
-            sbCookies.append('\n');
+            return Long.toString(milliseconds);
         }
-
-        return sbCookies.toString();
-    }
-
-    private static String str2Seconds(String strTime) {
-        Calendar c = Calendar.getInstance();
-        long milliseconds = 0;
-
-        try {
-            c.setTime(new SimpleDateFormat("EEE, dd-MMM-yy hh:mm:ss zzz", Locale.US).parse(strTime));
-            milliseconds = c.getTimeInMillis() / 1000;
-        } catch (ParseException e) {
-            Log.e("URLConnection exception", e.toString());
-        }
-
-        return Long.toString(milliseconds);
     }
 }

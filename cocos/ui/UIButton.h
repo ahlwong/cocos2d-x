@@ -350,10 +350,8 @@ protected:
     virtual void disabledTextureScaleChangedWithSize();
 
     virtual void adaptRenderers() override;
-
     // AWFramework added virtual keyword
     virtual void updateTitleLocation();
-    
     void updateContentSize();
     void createTitleRenderer();
 

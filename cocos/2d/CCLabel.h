@@ -104,7 +104,6 @@ struct LetterInfo
     int lineIndex;
 };
 
-
 /**
  * @brief Label is a subclass of Node that knows how to render text labels.
  *

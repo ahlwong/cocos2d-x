@@ -214,20 +214,40 @@ bool FontAtlasCache::releaseFontAtlas(FontAtlas *atlas)
 {
     if (nullptr != atlas)
     {
-        for( auto &item: _atlasMap )
-        {
-            if ( item.second == atlas )
-            {
-                if (atlas->getReferenceCount() == 1)
-                {
-                  _atlasMap.erase(item.first);
+        // AWFramework fix
+        // Modifying the underlying object by erasing entries while iterating over it results in undefined behavior
+        for (auto it = _atlasMap.begin(); it != _atlasMap.end();) {
+            if (it->second == atlas) {
+                if (atlas->getReferenceCount() == 1) {
+                    it = _atlasMap.erase(it);
                 }
-                
+                else {
+                    ++it;
+                }
+
                 atlas->release();
-                
+
                 return true;
             }
+            else {
+                ++it;
+            }
         }
+
+//        for( auto &item: _atlasMap )
+//        {
+//            if ( item.second == atlas )
+//            {
+//                if (atlas->getReferenceCount() == 1)
+//                {
+//                  _atlasMap.erase(item.first);
+//                }
+//                
+//                atlas->release();
+//                
+//                return true;
+//            }
+//        }
     }
     
     return false;

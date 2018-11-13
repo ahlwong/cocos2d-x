@@ -171,6 +171,12 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
             nextTokenX = 0.f;
             nextTokenY -= _lineHeight*_bmfontScale + lineSpacing;
             recordPlaceholderInfo(index, character);
+
+            // AWFramework addition
+            // Record position information for cursor
+            _lettersInfo[index].positionX = nextTokenX / contentScaleFactor;
+            _lettersInfo[index].positionY = nextTokenY / contentScaleFactor;
+
             index++;
             continue;
         }
@@ -188,6 +194,12 @@ bool Label::multilineTextWrap(const std::function<int(const std::u32string&, int
             if (character == (char16_t)TextFormatter::CarriageReturn)
             {
                 recordPlaceholderInfo(letterIndex, character);
+
+                // AWFramework addition
+                // Record position information for cursor
+                _lettersInfo[index].positionX = nextTokenX / contentScaleFactor;
+                _lettersInfo[index].positionY = nextTokenY / contentScaleFactor;
+
                 continue;
             }
             // \b - Next char not change x position

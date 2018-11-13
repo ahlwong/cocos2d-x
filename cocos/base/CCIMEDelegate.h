@@ -258,10 +258,11 @@ protected:
             }
             else if (selectedRange.startPosition > beginning) {
                 selectedRange.startPosition -= 1;
-                selectedRange.endPosition = end;
                 setSelectedTextRange(selectedRange);
             }
             replaceText(selectedRange, STD_STRING_EMPTY);
+            selectedRange.endPosition = selectedRange.startPosition;
+            setSelectedTextRange(selectedRange);
         }
     }
 

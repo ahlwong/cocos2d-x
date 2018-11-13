@@ -481,7 +481,7 @@ UrlAudioPlayer *AudioPlayerProvider::createUrlAudioPlayer(
 
     SLuint32 locatorType = info.assetFd->getFd() > 0 ? SL_DATALOCATOR_ANDROIDFD : SL_DATALOCATOR_URI;
     auto urlPlayer = new (std::nothrow) UrlAudioPlayer(_engineItf, _outputMixObject, _callerThreadUtils);
-    bool ret = urlPlayer->prepare(info.url, locatorType, info.assetFd, info.start, info.length);
+    bool ret = urlPlayer->preparePlayer(info.url, locatorType, info.assetFd, (int)info.start, (int)info.length);
     if (!ret)
     {
         SL_SAFE_DELETE(urlPlayer);

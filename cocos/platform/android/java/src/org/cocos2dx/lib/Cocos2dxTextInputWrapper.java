@@ -48,6 +48,11 @@ public class Cocos2dxTextInputWrapper implements TextWatcher, OnEditorActionList
     private String mText;
     private String mOriginText;
 
+    // AWFramework additions
+    private int replaceStart;
+    private int replaceLength;
+    private String replaceText;
+
     // ===========================================================
     // Constructors
     // ===========================================================
@@ -79,26 +84,8 @@ public class Cocos2dxTextInputWrapper implements TextWatcher, OnEditorActionList
         if (this.isFullScreenEdit()) {
             return;
         }
-        int old_i = 0;
-        int new_i = 0;
-        while (old_i < this.mText.length() && new_i < s.length()) {
-            if (this.mText.charAt(old_i) != s.charAt(new_i)) {
-                break;
-            }
-            old_i += 1;
-            new_i += 1;
-        }
 
-        for (; old_i < this.mText.length(); ++old_i) {
-            this.mCocos2dxGLSurfaceView.deleteBackward();
-        }
-
-        int nModified = s.length() - new_i;
-        if (nModified > 0) {
-            final String insertText = s.subSequence(new_i, s.length()).toString();
-            this.mCocos2dxGLSurfaceView.insertText(insertText);
-        }
-
+        this.mCocos2dxGLSurfaceView.replaceText(replaceStart, replaceLength, replaceText);
         this.mText = s.toString();
     }
 
@@ -110,6 +97,10 @@ public class Cocos2dxTextInputWrapper implements TextWatcher, OnEditorActionList
     @Override
     public void onTextChanged(final CharSequence pCharSequence, final int start, final int before, final int count) {
 
+        // AWFramework addition
+        replaceStart = start;
+        replaceLength = before;
+        replaceText = pCharSequence.subSequence(start, start + count).toString();
     }
 
     @Override
@@ -139,10 +130,16 @@ public class Cocos2dxTextInputWrapper implements TextWatcher, OnEditorActionList
             this.mCocos2dxGLSurfaceView.insertText(insertText);
 
         }
-        
-        if (pActionID == EditorInfo.IME_ACTION_DONE) {
-            this.mCocos2dxGLSurfaceView.requestFocus();
+
+        // AWFramework addition
+        // On action key press, append "\n" instead of hiding keyboard
+        if (pActionID == EditorInfo.IME_ACTION_DONE || (pKeyEvent != null && pKeyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+            pTextView.append("\n");
         }
+
+//        if (pActionID == EditorInfo.IME_ACTION_DONE) {
+//            this.mCocos2dxGLSurfaceView.requestFocus();
+//        }
         return false;
     }
 

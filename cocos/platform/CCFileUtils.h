@@ -1,27 +1,27 @@
 /****************************************************************************
-Copyright (c) 2010-2013 cocos2d-x.org
-Copyright (c) 2013-2017 Chukong Technologies Inc.
+ Copyright (c) 2010-2013 cocos2d-x.org
+ Copyright (c) 2013-2017 Chukong Technologies Inc.
 
-http://www.cocos2d-x.org
+ http://www.cocos2d-x.org
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-****************************************************************************/
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ ****************************************************************************/
 #ifndef __CC_FILEUTILS_H__
 #define __CC_FILEUTILS_H__
 
@@ -166,12 +166,12 @@ public:
      *  Gets string from a file.
      */
     virtual std::string getStringFromFile(const std::string& filename);
-    
+
     /**
      * Gets string from a file, async off the main cocos thread
      *
      * @param path filepath for the string to be read. Can be relative or absolute path
-     * @param callback Function that will be called when file is read. Will be called 
+     * @param callback Function that will be called when file is read. Will be called
      * on the main cocos thread.
      */
     virtual void getStringFromFile(const std::string& path, std::function<void(std::string)> callback);
@@ -181,13 +181,13 @@ public:
      *  @return A data object.
      */
     virtual Data getDataFromFile(const std::string& filename);
-    
+
 
     /**
      * Gets a binary data object from a file, async off the main cocos thread.
      *
      * @param filename filepath for the data to be read. Can be relative or absolute path
-     * @param callback Function that will be called when file is read. Will be called 
+     * @param callback Function that will be called when file is read. Will be called
      * on the main cocos thread.
      */
     virtual void getDataFromFile(const std::string& filename, std::function<void(Data)> callback);
@@ -259,10 +259,10 @@ public:
      *      - Status::ObtainSizeFailed when failed to obtain the file size, the buffer will not changed.
      */
     template <
-        typename T,
-        typename Enable = typename std::enable_if<
-            std::is_base_of< ResizableBuffer, ResizableBufferAdapter<T> >::value
-        >::type
+    typename T,
+    typename Enable = typename std::enable_if<
+    std::is_base_of< ResizableBuffer, ResizableBufferAdapter<T> >::value
+    >::type
     >
     Status getContents(const std::string& filename, T* buffer) {
         ResizableBufferAdapter<T> buf(buffer);
@@ -301,34 +301,34 @@ public:
 
      For instance:
 
-         We set two elements("/mnt/sdcard/", "internal_dir/") to search paths vector by setSearchPaths,
-         and set three elements("resources-ipadhd/", "resources-ipad/", "resources-iphonehd")
-         to resolutions vector by setSearchResolutionsOrder. The "internal_dir" is relative to "Resources/".
+     We set two elements("/mnt/sdcard/", "internal_dir/") to search paths vector by setSearchPaths,
+     and set three elements("resources-ipadhd/", "resources-ipad/", "resources-iphonehd")
+     to resolutions vector by setSearchResolutionsOrder. The "internal_dir" is relative to "Resources/".
 
-        If we have a file named 'sprite.png', the mapping in fileLookup dictionary contains `key: sprite.png -> value: sprite.pvr.gz`.
-         Firstly, it will replace 'sprite.png' with 'sprite.pvr.gz', then searching the file sprite.pvr.gz as follows:
+     If we have a file named 'sprite.png', the mapping in fileLookup dictionary contains `key: sprite.png -> value: sprite.pvr.gz`.
+     Firstly, it will replace 'sprite.png' with 'sprite.pvr.gz', then searching the file sprite.pvr.gz as follows:
 
-             /mnt/sdcard/resources-ipadhd/sprite.pvr.gz      (if not found, search next)
-             /mnt/sdcard/resources-ipad/sprite.pvr.gz        (if not found, search next)
-             /mnt/sdcard/resources-iphonehd/sprite.pvr.gz    (if not found, search next)
-             /mnt/sdcard/sprite.pvr.gz                       (if not found, search next)
-             internal_dir/resources-ipadhd/sprite.pvr.gz     (if not found, search next)
-             internal_dir/resources-ipad/sprite.pvr.gz       (if not found, search next)
-             internal_dir/resources-iphonehd/sprite.pvr.gz   (if not found, search next)
-             internal_dir/sprite.pvr.gz                      (if not found, return "sprite.png")
+     /mnt/sdcard/resources-ipadhd/sprite.pvr.gz      (if not found, search next)
+     /mnt/sdcard/resources-ipad/sprite.pvr.gz        (if not found, search next)
+     /mnt/sdcard/resources-iphonehd/sprite.pvr.gz    (if not found, search next)
+     /mnt/sdcard/sprite.pvr.gz                       (if not found, search next)
+     internal_dir/resources-ipadhd/sprite.pvr.gz     (if not found, search next)
+     internal_dir/resources-ipad/sprite.pvr.gz       (if not found, search next)
+     internal_dir/resources-iphonehd/sprite.pvr.gz   (if not found, search next)
+     internal_dir/sprite.pvr.gz                      (if not found, return "sprite.png")
 
-        If the filename contains relative path like "gamescene/uilayer/sprite.png",
-        and the mapping in fileLookup dictionary contains `key: gamescene/uilayer/sprite.png -> value: gamescene/uilayer/sprite.pvr.gz`.
-        The file search order will be:
+     If the filename contains relative path like "gamescene/uilayer/sprite.png",
+     and the mapping in fileLookup dictionary contains `key: gamescene/uilayer/sprite.png -> value: gamescene/uilayer/sprite.pvr.gz`.
+     The file search order will be:
 
-             /mnt/sdcard/gamescene/uilayer/resources-ipadhd/sprite.pvr.gz      (if not found, search next)
-             /mnt/sdcard/gamescene/uilayer/resources-ipad/sprite.pvr.gz        (if not found, search next)
-             /mnt/sdcard/gamescene/uilayer/resources-iphonehd/sprite.pvr.gz    (if not found, search next)
-             /mnt/sdcard/gamescene/uilayer/sprite.pvr.gz                       (if not found, search next)
-             internal_dir/gamescene/uilayer/resources-ipadhd/sprite.pvr.gz     (if not found, search next)
-             internal_dir/gamescene/uilayer/resources-ipad/sprite.pvr.gz       (if not found, search next)
-             internal_dir/gamescene/uilayer/resources-iphonehd/sprite.pvr.gz   (if not found, search next)
-             internal_dir/gamescene/uilayer/sprite.pvr.gz                      (if not found, return "gamescene/uilayer/sprite.png")
+     /mnt/sdcard/gamescene/uilayer/resources-ipadhd/sprite.pvr.gz      (if not found, search next)
+     /mnt/sdcard/gamescene/uilayer/resources-ipad/sprite.pvr.gz        (if not found, search next)
+     /mnt/sdcard/gamescene/uilayer/resources-iphonehd/sprite.pvr.gz    (if not found, search next)
+     /mnt/sdcard/gamescene/uilayer/sprite.pvr.gz                       (if not found, search next)
+     internal_dir/gamescene/uilayer/resources-ipadhd/sprite.pvr.gz     (if not found, search next)
+     internal_dir/gamescene/uilayer/resources-ipad/sprite.pvr.gz       (if not found, search next)
+     internal_dir/gamescene/uilayer/resources-iphonehd/sprite.pvr.gz   (if not found, search next)
+     internal_dir/gamescene/uilayer/sprite.pvr.gz                      (if not found, return "gamescene/uilayer/sprite.png")
 
      If the new file can't be found on the file system, it will return the parameter filename directly.
 
@@ -405,11 +405,11 @@ public:
     virtual void setSearchResolutionsOrder(const std::vector<std::string>& searchResolutionsOrder);
 
     /**
-      * Append search order of the resources.
-      *
-      * @see setSearchResolutionsOrder(), fullPathForFilename().
-      * @since v2.1
-      */
+     * Append search order of the resources.
+     *
+     * @see setSearchResolutionsOrder(), fullPathForFilename().
+     * @since v2.1
+     */
     virtual void addSearchResolutionsOrder(const std::string &order,const bool front=false);
 
     /**
@@ -453,18 +453,18 @@ public:
     void setDefaultResourceRootPath(const std::string& path);
 
     /**
-      * Add search path.
-      *
-      * @since v2.1
-      */
+     * Add search path.
+     *
+     * @since v2.1
+     */
     void addSearchPath(const std::string & path, const bool front=false);
 
     /**
      *  Gets the array of search paths.
      *
-     *  @return The array of search paths which may contain the prefix of default resource root path. 
+     *  @return The array of search paths which may contain the prefix of default resource root path.
      *  @note In best practise, getter function should return the value of setter function passes in.
-     *        But since we should not break the compatibility, we keep using the old logic. 
+     *        But since we should not break the compatibility, we keep using the old logic.
      *        Therefore, If you want to get the original search paths, please call 'getOriginalSearchPaths()' instead.
      *  @see fullPathForFilename(const char*).
      *  @lua NA
@@ -513,12 +513,12 @@ public:
     virtual ValueMap getValueMapFromData(const char* filedata, int filesize);
 
     /**
-    * write a ValueMap into a plist file
-    *
-    *@param dict the ValueMap want to save
-    *@param fullPath The full path to the file you want to save a string
-    *@return bool
-    */
+     * write a ValueMap into a plist file
+     *
+     *@param dict the ValueMap want to save
+     *@param fullPath The full path to the file you want to save a string
+     *@return bool
+     */
     virtual bool writeToFile(const ValueMap& dict, const std::string& fullPath);
 
     /**
@@ -530,7 +530,7 @@ public:
      */
     virtual bool writeStringToFile(const std::string& dataStr, const std::string& fullPath);
 
-    
+
     /**
      * Write a string to a file, done async off the main cocos thread
      * Use this function if you need file access without blocking the main thread.
@@ -541,11 +541,11 @@ public:
      * @param dataStr the string want to save
      * @param fullPath The full path to the file you want to save a string
      * @param callback The function called once the string has been written to a file. This
-     * function will be executed on the main cocos thread. It will have on boolean argument 
+     * function will be executed on the main cocos thread. It will have on boolean argument
      * signifying if the write was successful.
      */
     virtual void writeStringToFile(std::string dataStr, const std::string& fullPath, std::function<void(bool)> callback);
-    
+
     /**
      * write Data into a file
      *
@@ -554,81 +554,81 @@ public:
      *@return bool
      */
     virtual bool writeDataToFile(const Data& data, const std::string& fullPath);
-    
+
 
     /**
-    * Write Data into a file, done async off the main cocos thread.
-    *
-    * Use this function if you need to write Data while not blocking the main cocos thread.
-    *
-    * This function takes Data by value on purpose, to leverage move sematics.
-    * If you want to avoid a copy of your data, use std::move/std::forward if appropriate
-    *
-    *@param data The data that will be written to disk
-    *@param fullPath The absolute file path that the data will be written to
-    *@param callback The function that will be called when data is written to disk. This
-    * function will be executed on the main cocos thread. It will have on boolean argument 
-    * signifying if the write was successful.
-    */
+     * Write Data into a file, done async off the main cocos thread.
+     *
+     * Use this function if you need to write Data while not blocking the main cocos thread.
+     *
+     * This function takes Data by value on purpose, to leverage move sematics.
+     * If you want to avoid a copy of your data, use std::move/std::forward if appropriate
+     *
+     *@param data The data that will be written to disk
+     *@param fullPath The absolute file path that the data will be written to
+     *@param callback The function that will be called when data is written to disk. This
+     * function will be executed on the main cocos thread. It will have on boolean argument
+     * signifying if the write was successful.
+     */
     virtual void writeDataToFile(Data data, const std::string& fullPath, std::function<void(bool)> callback);
 
     /**
-    * write ValueMap into a plist file
-    *
-    *@param dict the ValueMap want to save
-    *@param fullPath The full path to the file you want to save a string
-    *@return bool
-    */
+     * write ValueMap into a plist file
+     *
+     *@param dict the ValueMap want to save
+     *@param fullPath The full path to the file you want to save a string
+     *@return bool
+     */
     virtual bool writeValueMapToFile(const ValueMap& dict, const std::string& fullPath);
 
     /**
-    * Write a ValueMap into a file, done async off the main cocos thread.
-    *
-    * Use this function if you need to write a ValueMap while not blocking the main cocos thread.
-    *
-    * This function takes ValueMap by value on purpose, to leverage move sematics.
-    * If you want to avoid a copy of your dict, use std::move/std::forward if appropriate
-    *
-    *@param dict The ValueMap that will be written to disk
-    *@param fullPath The absolute file path that the data will be written to
-    *@param callback The function that will be called when dict is written to disk. This
-    * function will be executed on the main cocos thread. It will have on boolean argument 
-    * signifying if the write was successful.
-    */
+     * Write a ValueMap into a file, done async off the main cocos thread.
+     *
+     * Use this function if you need to write a ValueMap while not blocking the main cocos thread.
+     *
+     * This function takes ValueMap by value on purpose, to leverage move sematics.
+     * If you want to avoid a copy of your dict, use std::move/std::forward if appropriate
+     *
+     *@param dict The ValueMap that will be written to disk
+     *@param fullPath The absolute file path that the data will be written to
+     *@param callback The function that will be called when dict is written to disk. This
+     * function will be executed on the main cocos thread. It will have on boolean argument
+     * signifying if the write was successful.
+     */
     virtual void writeValueMapToFile(ValueMap dict, const std::string& fullPath, std::function<void(bool)> callback);
 
     /**
-    * write ValueVector into a plist file
-    *
-    *@param vecData the ValueVector want to save
-    *@param fullPath The full path to the file you want to save a string
-    *@return bool
-    */
+     * write ValueVector into a plist file
+     *
+     *@param vecData the ValueVector want to save
+     *@param fullPath The full path to the file you want to save a string
+     *@return bool
+     */
     virtual bool writeValueVectorToFile(const ValueVector& vecData, const std::string& fullPath);
 
     /**
-    * Write a ValueVector into a file, done async off the main cocos thread.
-    *
-    * Use this function if you need to write a ValueVector while not blocking the main cocos thread.
-    *
-    * This function takes ValueVector by value on purpose, to leverage move sematics.
-    * If you want to avoid a copy of your dict, use std::move/std::forward if appropriate
-    *
-    *@param vecData The ValueVector that will be written to disk
-    *@param fullPath The absolute file path that the data will be written to
-    *@param callback The function that will be called when vecData is written to disk. This
-    * function will be executed on the main cocos thread. It will have on boolean argument 
-    * signifying if the write was successful.
-    */
+     * Write a ValueVector into a file, done async off the main cocos thread.
+     *
+     * Use this function if you need to write a ValueVector while not blocking the main cocos thread.
+     *
+     * This function takes ValueVector by value on purpose, to leverage move sematics.
+     * If you want to avoid a copy of your dict, use std::move/std::forward if appropriate
+     *
+     *@param vecData The ValueVector that will be written to disk
+     *@param fullPath The absolute file path that the data will be written to
+     *@param callback The function that will be called when vecData is written to disk. This
+     * function will be executed on the main cocos thread. It will have on boolean argument
+     * signifying if the write was successful.
+     */
     virtual void writeValueVectorToFile(ValueVector vecData, const std::string& fullPath, std::function<void(bool)> callback);
 
     /**
-    * Windows fopen can't support UTF-8 filename
-    * Need convert all parameters fopen and other 3rd-party libs
-    *
-    * @param filenameUtf8 std::string name file for conversion from utf-8
-    * @return std::string ansi filename in current locale
-    */
+     * Windows fopen can't support UTF-8 filename
+     * Need convert all parameters fopen and other 3rd-party libs
+     *
+     * @param filenameUtf8 std::string name file for conversion from utf-8
+     * @return std::string ansi filename in current locale
+     */
     virtual std::string getSuitableFOpen(const std::string& filenameUtf8) const;
 
     // Converts the contents of a file to a ValueVector.
@@ -646,7 +646,7 @@ public:
 
     /**
      * Checks if a file exists, done async off the main cocos thread.
-     * 
+     *
      * Use this function if you need to check if a file exists while not blocking the main cocos thread.
      *
      *  @note If a relative path was passed in, it will be inserted a default root path at the beginning.
@@ -657,11 +657,11 @@ public:
     virtual void isFileExist(const std::string& filename, std::function<void(bool)> callback);
 
     /**
-    *  Gets filename extension is a suffix (separated from the base filename by a dot) in lower case.
-    *  Examples of filename extensions are .png, .jpeg, .exe, .dmg and .txt.
-    *  @param filePath The path of the file, it could be a relative or absolute path.
-    *  @return suffix for filename in lower case or empty if a dot not found.
-    */
+     *  Gets filename extension is a suffix (separated from the base filename by a dot) in lower case.
+     *  Examples of filename extensions are .png, .jpeg, .exe, .dmg and .txt.
+     *  @param filePath The path of the file, it could be a relative or absolute path.
+     *  @return suffix for filename in lower case or empty if a dot not found.
+     */
     virtual std::string getFileExtension(const std::string& filePath) const;
 
     /**
@@ -687,7 +687,7 @@ public:
      *  Checks whether the absoulate path is a directory, async off of the main cocos thread.
      *
      * @param dirPath The path of the directory, it must be an absolute path
-     * @param callback that will accept a boolean, true if the file exists, false otherwise. 
+     * @param callback that will accept a boolean, true if the file exists, false otherwise.
      * Callback will happen on the main cocos thread.
      */
     virtual void isDirectoryExist(const std::string& fullPath, std::function<void(bool)> callback);
@@ -819,7 +819,7 @@ public:
      * @lua NA
      */
     virtual void listFilesAsync(const std::string& dirPath, std::function<void(std::vector<std::string>)> callback) const;
-    
+
     /**
      *  List all files recursively in a directory.
      *
@@ -829,14 +829,14 @@ public:
     virtual void listFilesRecursively(const std::string& dirPath, std::vector<std::string> *files) const;
 
     /**
-    *  List all files recursively in a directory, async off the main cocos thread.
-    *
-    *  @param dirPath The path of the directory, it could be a relative or an absolute path.
-    *  @param callback The callback to be called once the list operation is complete. 
-    *          Will be called on the main cocos thread.
-    * @js NA
-    * @lua NA
-    */
+     *  List all files recursively in a directory, async off the main cocos thread.
+     *
+     *  @param dirPath The path of the directory, it could be a relative or an absolute path.
+     *  @param callback The callback to be called once the list operation is complete.
+     *          Will be called on the main cocos thread.
+     * @js NA
+     * @lua NA
+     */
     virtual void listFilesRecursivelyAsync(const std::string& dirPath, std::function<void(std::vector<std::string>)> callback) const;
 
     /** Returns the full path cache. */
@@ -966,19 +966,19 @@ protected:
 
         // Visual Studio 2013 does not support using std::bind to forward template parameters into
         // a lambda. To get around this, we will just copy these arguments via lambda capture
-#if defined(_MSC_VER) && _MSC_VER  < 1900 
-        auto lambda = [action, callback, args...]() 
+#if defined(_MSC_VER) && _MSC_VER  < 1900
+        auto lambda = [action, callback, args...]()
         {
             Director::getInstance()->getScheduler()->performFunctionInCocosThread(std::bind(callback, action(args...)));
         };
 #else
         // As cocos2d-x uses c++11, we will use std::bind to leverage move sematics to
-        // move our arguments into our lambda, to potentially avoid copying. 
+        // move our arguments into our lambda, to potentially avoid copying.
         auto lambda = std::bind([](const T& actionIn, const R& callbackIn, const ARGS& ...argsIn)
-        {
-            Director::getInstance()->getScheduler()->performFunctionInCocosThread(std::bind(callbackIn, actionIn(argsIn...)));
-        }, std::forward<T>(action), std::forward<R>(callback), std::forward<ARGS>(args)...);
-        
+                                {
+                                    Director::getInstance()->getScheduler()->performFunctionInCocosThread(std::bind(callbackIn, actionIn(argsIn...)));
+                                }, std::forward<T>(action), std::forward<R>(callback), std::forward<ARGS>(args)...);
+
 #endif
 
         AsyncTaskPool::getInstance()->enqueue(AsyncTaskPool::TaskType::TASK_IO, [](void*){}, nullptr, std::move(lambda));

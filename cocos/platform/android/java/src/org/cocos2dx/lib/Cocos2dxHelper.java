@@ -683,7 +683,7 @@ public class Cocos2dxHelper {
     public static void setLongLongForKey(String key, long value) {
         setLongForKey(key, value);
     }
-
+    
     public static void setFloatForKey(String key, float value) {
         SharedPreferences settings = sActivity.getSharedPreferences(Cocos2dxHelper.PREFS_NAME, 0);
         SharedPreferences.Editor editor = settings.edit();

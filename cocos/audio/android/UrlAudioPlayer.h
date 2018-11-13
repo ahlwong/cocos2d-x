@@ -88,8 +88,10 @@ private:
     UrlAudioPlayer(SLEngineItf engineItf, SLObjectItf outputMixObject, ICallerThreadUtils* callerThreadUtils);
     virtual ~UrlAudioPlayer();
 
-    bool prepare(const std::string &url, SLuint32 locatorType, std::shared_ptr<AssetFd> assetFd, int start, int length);
+public:
+    bool preparePlayer(const std::string &url, SLuint32 locatorType, std::shared_ptr<AssetFd> assetFd, int start, int length);
 
+private:
     static void stopAll();
 
     void destroy();

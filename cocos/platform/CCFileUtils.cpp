@@ -1,27 +1,27 @@
 /****************************************************************************
-Copyright (c) 2010-2013 cocos2d-x.org
-Copyright (c) 2013-2017 Chukong Technologies Inc.
+ Copyright (c) 2010-2013 cocos2d-x.org
+ Copyright (c) 2013-2017 Chukong Technologies Inc.
 
-http://www.cocos2d-x.org
+ http://www.cocos2d-x.org
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-****************************************************************************/
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ ****************************************************************************/
 
 #include "platform/CCFileUtils.h"
 
@@ -34,7 +34,6 @@ THE SOFTWARE.
 //#include "base/ccUtils.h"
 
 #include "tinyxml2/tinyxml2.h"
-#include "tinydir/tinydir.h"
 #ifdef MINIZIP_FROM_SYSTEM
 #include <minizip/unzip.h>
 #else // from our embedded sources
@@ -86,7 +85,7 @@ public:
 
 public:
     DictMaker()
-        : _resultType(SAX_RESULT_NONE)
+    : _resultType(SAX_RESULT_NONE)
     {
     }
 
@@ -302,12 +301,12 @@ public:
 
         switch(_state)
         {
-        case SAX_KEY:
-            _curKey = text;
-            break;
-        case SAX_INT:
-        case SAX_REAL:
-        case SAX_STRING:
+            case SAX_KEY:
+                _curKey = text;
+                break;
+            case SAX_INT:
+            case SAX_REAL:
+            case SAX_STRING:
             {
                 if (curState == SAX_DICT)
                 {
@@ -316,9 +315,9 @@ public:
 
                 _curValue.append(text);
             }
-            break;
-        default:
-            break;
+                break;
+            default:
+                break;
         }
     }
 };
@@ -551,7 +550,7 @@ void FileUtils::setDelegate(FileUtils *delegate)
 }
 
 FileUtils::FileUtils()
-    : _writablePath("")
+: _writablePath("")
 {
 }
 
@@ -753,7 +752,7 @@ unsigned char* FileUtils::getFileDataFromZip(const std::string& zipFilePath, con
 
 void FileUtils::writeValueMapToFile(ValueMap dict, const std::string& fullPath, std::function<void(bool)> callback)
 {
-    
+
     performOperationOffthread([fullPath](const ValueMap& dictIn) -> bool {
         return FileUtils::getInstance()->writeValueMapToFile(dictIn, fullPath);
     }, std::move(callback), std::move(dict));
@@ -1149,7 +1148,7 @@ void FileUtils::renameFile(const std::string &path, const std::string &oldname, 
     performOperationOffthread([path, oldname, name]() -> bool {
         return FileUtils::getInstance()->renameFile(path, oldname, name);
     }, std::move(callback));
-                                
+
 }
 
 void FileUtils::renameFile(const std::string &oldfullpath, const std::string &newfullpath, std::function<void(bool)> callback)
@@ -1167,136 +1166,12 @@ void FileUtils::getFileSize(const std::string &filepath, std::function<void(long
     }, std::move(callback));
 }
 
-std::vector<std::string> FileUtils::listFiles(const std::string& dirPath) const
-{
-    std::string fullpath = fullPathForFilename(dirPath);
-    std::vector<std::string> files;
-    if (isDirectoryExist(fullpath))
-    {
-        tinydir_dir dir;
-#ifdef UNICODE
-        unsigned int length = MultiByteToWideChar(CP_UTF8, 0, &fullpath[0], (int)fullpath.size(), NULL, 0);
-        if (length != fullpath.size())
-        {
-            return files;
-        }
-        std::wstring fullpathstr(length, 0);
-        MultiByteToWideChar(CP_UTF8, 0, &fullpath[0], (int)fullpath.size(), &fullpathstr[0], length);
-#else
-        std::string fullpathstr = fullpath;
-#endif
-        if (tinydir_open(&dir, &fullpathstr[0]) != -1)
-        {
-            while (dir.has_next)
-            {
-                tinydir_file file;
-                if (tinydir_readfile(&dir, &file) == -1)
-                {
-                    // Error getting file
-                    break;
-                }
-                
-#ifdef UNICODE
-                std::wstring path = file.path;
-                length = WideCharToMultiByte(CP_UTF8, 0, &path[0], (int)path.size(), NULL, 0, NULL, NULL);
-                std::string filepath;
-                if (length > 0)
-                {
-                    filepath.resize(length);
-                    WideCharToMultiByte(CP_UTF8, 0, &path[0], (int)path.size(), &filepath[0], length, NULL, NULL);
-                }
-#else
-                std::string filepath = file.path;
-#endif
-                if (file.is_dir)
-                {
-                    filepath.append("/");
-                }
-                files.push_back(filepath);
-                
-                if (tinydir_next(&dir) == -1)
-                {
-                    // Error getting next file
-                    break;
-                }
-            }
-        }
-        tinydir_close(&dir);
-    }
-    return files;
-}
-
 void FileUtils::listFilesAsync(const std::string& dirPath, std::function<void(std::vector<std::string>)> callback) const
 {
     auto fullPath = fullPathForFilename(dirPath);
     performOperationOffthread([fullPath]() {
         return FileUtils::getInstance()->listFiles(fullPath);
     }, std::move(callback));
-}
-
-void FileUtils::listFilesRecursively(const std::string& dirPath, std::vector<std::string> *files) const
-{
-    std::string fullpath = fullPathForFilename(dirPath);
-    if (isDirectoryExist(fullpath))
-    {
-        tinydir_dir dir;
-#ifdef UNICODE
-        unsigned int length = MultiByteToWideChar(CP_UTF8, 0, &fullpath[0], (int)fullpath.size(), NULL, 0);
-        if (length != fullpath.size())
-        {
-            return;
-        }
-        std::wstring fullpathstr(length, 0);
-        MultiByteToWideChar(CP_UTF8, 0, &fullpath[0], (int)fullpath.size(), &fullpathstr[0], length);
-#else
-        std::string fullpathstr = fullpath;
-#endif
-        if (tinydir_open(&dir, &fullpathstr[0]) != -1)
-        {
-            while (dir.has_next)
-            {
-                tinydir_file file;
-                if (tinydir_readfile(&dir, &file) == -1)
-                {
-                    // Error getting file
-                    break;
-                }
-
-#ifdef UNICODE
-                std::wstring path = file.path;
-                length = WideCharToMultiByte(CP_UTF8, 0, &path[0], (int)path.size(), NULL, 0, NULL, NULL);
-                std::string filepath;
-                if (length > 0)
-                {
-                    filepath.resize(length);
-                    WideCharToMultiByte(CP_UTF8, 0, &path[0], (int)path.size(), &filepath[0], length, NULL, NULL);
-                }
-#else
-                std::string filepath = file.path;
-#endif
-                if (file.name[0] != '.')
-                {
-                    if (file.is_dir)
-                    {
-                        filepath.append("/");
-                        files->push_back(filepath);
-                        listFilesRecursively(filepath, files);
-                    }
-                    else
-                    {
-                        files->push_back(filepath);
-                    }
-                }
-                
-                if (tinydir_next(&dir) == -1)
-                {
-                    // Error getting next file
-                    break;
-                }
-            }
-        }
-        tinydir_close(&dir);
-    }
 }
 
 void FileUtils::listFilesRecursivelyAsync(const std::string& dirPath, std::function<void(std::vector<std::string>)> callback) const
@@ -1359,11 +1234,29 @@ long FileUtils::getFileSize(const std::string &filepath)
     return 0;
 }
 
+std::vector<std::string> FileUtils::listFiles(const std::string& dirPath) const
+{
+    CCASSERT(false, "FileUtils not support listFiles");
+    return std::vector<std::string>();
+}
+
+void FileUtils::listFilesRecursively(const std::string& dirPath, std::vector<std::string> *files) const
+{
+    CCASSERT(false, "FileUtils not support listFilesRecursively");
+    return;
+}
+
 #else
+#include "tinydir/tinydir.h"
 // default implements for unix like os
 #include <sys/types.h>
 #include <errno.h>
 #include <dirent.h>
+
+// android doesn't have ftw.h
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+#include <ftw.h>
+#endif
 
 bool FileUtils::isDirectoryExistInternal(const std::string& dirPath) const
 {
@@ -1438,9 +1331,31 @@ bool FileUtils::createDirectory(const std::string& path)
     return true;
 }
 
+namespace
+{
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+    int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+    {
+        int rv = remove(fpath);
+
+        if (rv)
+            perror(fpath);
+
+        return rv;
+    }
+#endif
+}
+
 bool FileUtils::removeDirectory(const std::string& path)
 {
 #if !defined(CC_TARGET_OS_TVOS)
+
+#if (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+    if (nftw(path.c_str(), unlink_cb, 64, FTW_DEPTH | FTW_PHYS) == -1)
+        return false;
+    else
+        return true;
+#else
     std::string command = "rm -r ";
     // Path may include space.
     command += "\"" + path + "\"";
@@ -1448,9 +1363,11 @@ bool FileUtils::removeDirectory(const std::string& path)
         return true;
     else
         return false;
+#endif // (CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID)
+
 #else
     return false;
-#endif
+#endif // !defined(CC_TARGET_OS_TVOS)
 }
 
 bool FileUtils::removeFile(const std::string &path)
@@ -1491,7 +1408,6 @@ std::string FileUtils::getSuitableFOpen(const std::string& filenameUtf8) const
     return filenameUtf8;
 }
 
-
 long FileUtils::getFileSize(const std::string &filepath)
 {
     CCASSERT(!filepath.empty(), "Invalid path");
@@ -1519,6 +1435,92 @@ long FileUtils::getFileSize(const std::string &filepath)
         return (long)(info.st_size);
     }
 }
+
+std::vector<std::string> FileUtils::listFiles(const std::string& dirPath) const
+{
+    std::vector<std::string> files;
+    std::string fullpath = fullPathForFilename(dirPath);
+    if (isDirectoryExist(fullpath))
+    {
+        tinydir_dir dir;
+        std::string fullpathstr = fullpath;
+
+        if (tinydir_open(&dir, &fullpathstr[0]) != -1)
+        {
+            while (dir.has_next)
+            {
+                tinydir_file file;
+                if (tinydir_readfile(&dir, &file) == -1)
+                {
+                    // Error getting file
+                    break;
+                }
+                std::string filepath = file.path;
+
+                if (file.is_dir)
+                {
+                    filepath.append("/");
+                }
+                files.push_back(filepath);
+
+                if (tinydir_next(&dir) == -1)
+                {
+                    // Error getting next file
+                    break;
+                }
+            }
+        }
+        tinydir_close(&dir);
+    }
+    return files;
+}
+
+void FileUtils::listFilesRecursively(const std::string& dirPath, std::vector<std::string> *files) const
+{
+    std::string fullpath = fullPathForFilename(dirPath);
+    if (isDirectoryExist(fullpath))
+    {
+        tinydir_dir dir;
+        std::string fullpathstr = fullpath;
+
+        if (tinydir_open(&dir, &fullpathstr[0]) != -1)
+        {
+            while (dir.has_next)
+            {
+                tinydir_file file;
+                if (tinydir_readfile(&dir, &file) == -1)
+                {
+                    // Error getting file
+                    break;
+                }
+                std::string fileName = file.name;
+
+                if (fileName != "." && fileName != "..")
+                {
+                    std::string filepath = file.path;
+                    if (file.is_dir)
+                    {
+                        filepath.append("/");
+                        files->push_back(filepath);
+                        listFilesRecursively(filepath, files);
+                    }
+                    else
+                    {
+                        files->push_back(filepath);
+                    }
+                }
+
+                if (tinydir_next(&dir) == -1)
+                {
+                    // Error getting next file
+                    break;
+                }
+            }
+        }
+        tinydir_close(&dir);
+    }
+}
+
 #endif
 
 //////////////////////////////////////////////////////////////////////////

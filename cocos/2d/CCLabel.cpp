@@ -411,6 +411,9 @@ Label::Label(TextHAlignment hAlignment /* = TextHAlignment::LEFT */,
             if (_fontAtlas)
             {
                 FontAtlasCache::releaseFontAtlas(_fontAtlas);
+
+                // AWFramework addition
+                _fontAtlas = nullptr;
             }
         }
     });
@@ -440,6 +443,9 @@ Label::~Label()
         CC_SAFE_RELEASE_NULL(_reusedLetter);
         _batchNodes.clear();
         FontAtlasCache::releaseFontAtlas(_fontAtlas);
+
+        // AWFramework addition
+        _fontAtlas = nullptr;
     }
     _eventDispatcher->removeEventListener(_purgeTextureListener);
     _eventDispatcher->removeEventListener(_resetTextureListener);
